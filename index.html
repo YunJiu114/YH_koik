@@ -1,429 +1,2247 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>YH · 卡密管理后台</title>
-<style>
- *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
- :root{
-  --bg:#0b1020;
-  --panel:rgba(255,255,255,.06);
-  --panel2:rgba(255,255,255,.10);
-  --line:rgba(255,255,255,.10);
-  --text:#f4f6ff;
-  --muted:#9aa3c7;
-  --accent:#ffb6d5;
-  --accent2:#8ecbff;
- }
- html,body{margin:0;padding:0}
- body{
-  background:
-   radial-gradient(900px 520px at 8% -10%, rgba(255,182,213,.38), transparent 60%),
-   radial-gradient(900px 520px at 100% 0%, rgba(142,203,255,.38), transparent 60%),
-   #0b1020 fixed;
-  color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
-  min-height:100vh;-webkit-font-smoothing:antialiased;
- }
- .app{max-width:520px;margin:0 auto;min-height:100vh;position:relative;display:flex;flex-direction:column}
-
- .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(11,16,32,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
- .logo{width:38px;height:38px;border-radius:12px;flex:0 0 auto;background:linear-gradient(135deg,#ffb6d5,#8ecbff);display:flex;align-items:center;justify-content:center;color:#0b1020;box-shadow:0 8px 20px -8px rgba(142,203,255,.9)}
- .logo svg{width:21px;height:21px}
- .tb-title{font-size:16px;font-weight:800;letter-spacing:.04em;background:linear-gradient(135deg,#ffd6e8,#b9e0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
- .tb-sub{font-size:11px;color:var(--muted);margin-top:2px}
-
- main{flex:1;padding:16px 16px 110px;position:relative;overflow-x:hidden}
- .page{display:none}
- .page.active{display:block;animation:pageIn .42s cubic-bezier(.2,.85,.3,1)}
- .page.exiting{display:block;animation:pageOut .18s cubic-bezier(.4,0,.7,1) forwards}
- @keyframes pageIn{0%{opacity:0;transform:translateY(22px) scale(.982)}60%{opacity:1}100%{opacity:1;transform:none}}
- @keyframes pageOut{0%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-16px) scale(.99)}}
-
- .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
- .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;position:relative;overflow:hidden}
- .stat.main{grid-column:span 2;background:linear-gradient(135deg,rgba(255,182,213,.25),rgba(142,203,255,.20));border-color:rgba(255,255,255,.16)}
- .stat.main::after{content:"";position:absolute;right:-30px;top:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(142,203,255,.35),transparent 70%)}
- .stat-label{font-size:12px;color:var(--muted)}
- .stat-value{font-size:28px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
- .stat.main .stat-value{font-size:36px}
- .stat-sub{font-size:11px;color:#b9e0ff;margin-top:6px}
- .stat-value.ok{color:#ffd6e8}
- .stat-value.warn{color:#9aa3c7}
-
- .section-title{display:flex;align-items:center;justify-content:space-between;margin:22px 4px 10px;font-size:13px;color:var(--muted);font-weight:600}
- .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
- .dist-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
- .dist-row:last-child{border-bottom:0}
- .dist-name{width:54px;font-size:13px;flex:0 0 auto}
- .dist-bar{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
- .dist-fill{height:100%;border-radius:99px;transition:width .85s cubic-bezier(.2,.8,.3,1)}
- .dist-nums{display:flex;gap:6px;flex:0 0 auto;align-items:center}
- .dist-count,.dist-pct{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
- .dist-count{min-width:46px}
- .dist-pct{min-width:38px}
-
- .field-label{font-size:13px;color:var(--muted);font-weight:600;margin:4px 4px 10px}
- .type-wrap{position:relative}
- .type-indicator{position:absolute;border-radius:14px;background:linear-gradient(180deg,rgba(255,182,213,.28),rgba(142,203,255,.14));box-shadow:0 0 0 1px rgba(255,182,213,.4),0 10px 26px -16px rgba(142,203,255,1);transition:left .42s cubic-bezier(.34,1.28,.64,1), top .42s cubic-bezier(.34,1.28,.64,1), width .42s cubic-bezier(.34,1.28,.64,1), height .42s cubic-bezier(.34,1.28,.64,1), opacity .3s ease;pointer-events:none;opacity:0;z-index:1}
- .type-indicator.on{opacity:1}
- .type-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
- .type-opt{position:relative;background:transparent;border:1px solid var(--line);border-radius:14px;padding:13px 6px 11px;cursor:pointer;text-align:center;color:var(--text);font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;transition:border-color .35s ease, transform .18s ease}
- .type-opt:active{transform:scale(.96)}
- .type-opt .name{font-size:13px;font-weight:700}
- .type-opt .desc{font-size:10px;color:var(--muted)}
- .type-opt.sel{border-color:transparent}
- .badge{min-width:28px;height:28px;padding:0 8px;border-radius:9px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;white-space:nowrap}
- .type-opt .tick{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#ffb6d5,#8ecbff);color:#0b1020;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1;font-weight:900;opacity:0;transform:scale(.4);transition:opacity .3s ease, transform .34s cubic-bezier(.34,1.56,.64,1)}
- .type-opt.sel .tick{opacity:1;transform:scale(1)}
-
- .mode-cell{position:relative;display:flex;flex-direction:column;gap:5px;border-radius:14px;border:1px solid var(--line);padding:5px;background:var(--panel);overflow:hidden}
- .mode-indicator{position:absolute;left:5px;width:calc(100% - 10px);border-radius:10px;background:linear-gradient(135deg,rgba(255,182,213,.35),rgba(142,203,255,.22));box-shadow:0 0 0 1px rgba(255,182,213,.4) inset,0 6px 18px -10px rgba(142,203,255,1);transition:top .4s cubic-bezier(.34,1.28,.64,1), height .4s cubic-bezier(.34,1.28,.64,1);pointer-events:none;z-index:0;top:5px;height:0}
- .mode-mini{position:relative;z-index:1;flex:1;border:0;border-radius:10px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;padding:6px 0}
- .mode-mini.sel{color:#fff}
-
- .code-input-wrap{position:relative;width:100%}
- .qty-real{width:100%;height:54px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:transparent;caret-color:transparent;padding:0 16px;font-size:17px;font-weight:700;outline:none;font-family:inherit;transition:.2s;display:block;position:relative;z-index:1}
- .qty-real:focus{border-color:rgba(255,182,213,.6);background:var(--panel2);box-shadow:0 0 0 3px rgba(255,182,213,.08)}
- .qty-real::placeholder{color:#767ea8;font-weight:500;font-size:14px}
- .qty-mirror{position:absolute;inset:0;padding:0 16px;display:flex;align-items:center;font-size:17px;font-weight:700;color:#f4f6ff;pointer-events:none;overflow:hidden;white-space:nowrap;z-index:2;border-radius:14px}
- .morph-section{margin-top:22px}
- .morph-slot{position:relative;height:54px;overflow:hidden;transition:height .52s cubic-bezier(.2,.8,.3,1)}
- .morph-slot.custom{height:200px}
- .morph-panel{position:absolute;left:0;right:0;top:0}
- .morph-random{height:54px;opacity:1;visibility:visible}
- .morph-slot.custom .morph-random{opacity:0;visibility:hidden;pointer-events:none}
- .morph-custom{height:200px;opacity:0;visibility:hidden;pointer-events:none}
- .morph-slot.custom .morph-custom{opacity:1;visibility:visible;pointer-events:auto}
- .morph-custom .code-input-wrap{position:absolute;inset:0}
- .morph-custom .code-real{height:100%;min-height:0}
- .code-real{width:100%;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:transparent;caret-color:transparent;padding:14px 16px;font-size:15px;font-weight:700;letter-spacing:.05em;line-height:1.75;outline:none;font-family:inherit;resize:none;overflow-y:auto;position:relative;z-index:1}
- .code-real:focus{border-color:rgba(255,182,213,.6);background:var(--panel2);box-shadow:0 0 0 3px rgba(255,182,213,.08)}
- .code-real::placeholder{color:#767ea8;font-weight:500;font-size:14px}
- .code-mirror{position:absolute;inset:0;padding:14px 16px;pointer-events:none;font-size:15px;font-weight:700;letter-spacing:.05em;line-height:1.75;white-space:pre-wrap;word-break:break-all;color:#f4f6ff;overflow:hidden;z-index:2;border:1px solid transparent;border-radius:14px}
- .mchar{display:inline-block;white-space:pre;will-change:transform,opacity}
- .mbr{display:block;height:0;margin:0;padding:0;line-height:0}
- .mchar.pop{animation:charPop .34s cubic-bezier(.34,1.56,.64,1) both}
- .mchar.fly{animation:charFly .44s cubic-bezier(.4,0,.7,1) forwards}
- @keyframes charPop{0%{opacity:0;transform:translateY(12px) scale(.55)}60%{opacity:1;transform:translateY(-2px) scale(1.08)}100%{opacity:1;transform:none}}
- @keyframes charFly{0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}100%{opacity:0;transform:translateY(-26px) scale(.3) rotate(-24deg)}}
- .mcaret{display:inline-block;width:2px;height:1em;margin-left:1px;vertical-align:-0.16em;border-radius:2px;background:linear-gradient(180deg,#ffb6d5,#8ecbff);box-shadow:0 0 8px rgba(142,203,255,.6);animation:caretPulse 1.3s ease-in-out infinite}
- @keyframes caretPulse{0%{opacity:1;transform:scaleY(1)}50%{opacity:.08;transform:scaleY(.9)}100%{opacity:1;transform:scaleY(1)}}
-
- .btn{border:0;border-radius:14px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
- .btn:active{transform:scale(.98)}
- .btn.primary{background:linear-gradient(135deg,#ffb6d5,#8ecbff);color:#0b1020;box-shadow:0 12px 28px -14px rgba(142,203,255,1)}
- .btn.ghost{background:rgba(255,255,255,.10);color:var(--text)}
- .btn.danger{background:linear-gradient(135deg,#ff8fa8,#ff5f8f);color:#fff}
- .btn.big{width:100%;padding:16px;font-size:16px;margin-top:22px;border-radius:16px}
-
- .result{margin-top:18px;display:none}
- .result.show{display:block}
- .result-head{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:#b9e0ff;margin-bottom:10px;padding:0 4px}
- .result-list{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-height:280px;overflow-y:auto}
- .result-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
- .result-row:last-child{border-bottom:0}
- .result-row span{font-family:ui-monospace,Menlo,monospace;font-size:13px;letter-spacing:.05em;word-break:break-all}
- .link-btn{background:none;border:0;color:#8ecbff;font-size:12px;cursor:pointer;font-family:inherit;padding:4px;font-weight:600}
-
- .search-box{position:relative;margin-bottom:12px}
- .search-real{width:100%;height:46px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:transparent;caret-color:transparent;padding:0 14px;font-size:14px;outline:none;font-family:inherit;transition:.2s;display:block;position:relative;z-index:1}
- .search-real:focus{border-color:rgba(255,182,213,.6);background:var(--panel2);box-shadow:0 0 0 3px rgba(255,182,213,.08)}
- .search-real::placeholder{color:#767ea8}
- .search-mirror{position:absolute;left:0;top:0;right:0;bottom:0;padding:0 14px;font-size:14px;line-height:44px;color:var(--text);pointer-events:none;overflow:hidden;white-space:nowrap;z-index:2;border-radius:14px}
-
- .chips{position:relative;display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;margin-bottom:8px;scrollbar-width:none}
- .chips::-webkit-scrollbar{display:none}
- .chip-indicator{position:absolute;top:0;left:0;width:0;height:0;border-radius:99px;background:linear-gradient(135deg,rgba(255,182,213,.40),rgba(142,203,255,.32));box-shadow:0 0 0 1px rgba(255,182,213,.45) inset,0 8px 22px -12px rgba(142,203,255,1);transition:left .44s cubic-bezier(.34,1.28,.64,1), top .44s cubic-bezier(.34,1.28,.64,1), width .44s cubic-bezier(.34,1.28,.64,1), height .44s cubic-bezier(.34,1.28,.64,1), opacity .25s ease;pointer-events:none;z-index:0;opacity:0}
- .chip-indicator.on{opacity:1}
- .chip{position:relative;z-index:1;flex:0 0 auto;padding:7px 12px;border-radius:99px;background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;display:flex;gap:6px;align-items:center;transition:.2s}
- .chip b{font-weight:700;opacity:.65;font-size:10.5px}
- .chip.sel{color:#fff;background:transparent;border-color:transparent}
-
- .list-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin:0 4px 10px}
- .card-list{display:flex;flex-direction:column;gap:10px;position:relative}
- .card-item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;transition:.25s;animation:cardIn .42s cubic-bezier(.2,.8,.3,1) both}
- @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
- .card-item.disabled{opacity:.55}
- .card-clone{animation:none !important;pointer-events:none !important;z-index:5;will-change:transform, opacity;transform-origin:center center}
- .ci-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
- .ci-status{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600}
- .ci-status.enabled{color:#ffd6e8;background:rgba(255,182,213,.18)}
- .ci-status.disabled{color:#9aa3c7;background:rgba(154,163,199,.16)}
- .ci-code{font-family:ui-monospace,Menlo,monospace;font-size:15px;font-weight:700;letter-spacing:.07em;margin-top:10px;word-break:break-all}
- .ci-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:9px}
- .ci-actions{display:flex;gap:8px;margin-top:12px}
- .mini{flex:1;padding:8px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;transition:.2s}
- .mini:hover{background:rgba(142,203,255,.15)}
- .mini.danger{color:#ffb3c6}
-
- .empty{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px}
- .empty .big{font-size:34px;display:block;margin-bottom:12px;opacity:.5}
-
- .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;gap:6px;z-index:30;background:rgba(11,16,32,.86);backdrop-filter:blur(20px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
- .tab-indicator{position:absolute;top:8px;left:10px;width:0;height:0;border-radius:14px;background:linear-gradient(180deg,rgba(255,182,213,.32),rgba(142,203,255,.16));box-shadow:0 0 0 1px rgba(255,255,255,.12) inset;transition:left .38s cubic-bezier(.34,1.3,.64,1), width .38s cubic-bezier(.34,1.3,.64,1), top .38s cubic-bezier(.34,1.3,.64,1), height .38s cubic-bezier(.34,1.3,.64,1);pointer-events:none}
- .tab{flex:1;background:none;border:0;color:var(--muted);padding:9px 4px;border-radius:14px;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-family:inherit;position:relative;z-index:1}
- .tab svg{width:20px;height:20px;stroke-width:1.9;transition:transform .3s cubic-bezier(.34,1.3,.64,1)}
- .tab.active{color:#fff}
- .tab.active svg{transform:translateY(-1px) scale(1.06)}
-
- .modal-mask{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(6,9,20,.72);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:.28s}
- .modal-mask.show{opacity:1;pointer-events:auto}
- .modal{width:100%;max-width:380px;background:rgba(20,26,48,.96);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:20px;transform:translateY(14px) scale(.55);opacity:0;transition:.34s}
- .modal-mask.show .modal{transform:translateY(0) scale(1);opacity:1}
- .modal-title{font-size:16px;font-weight:700;margin-bottom:6px}
- .modal-desc{font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:16px;word-break:break-all}
- .modal-actions{display:flex;gap:10px;margin-top:16px}
- .modal-actions .btn{flex:1}
- .action-list{display:flex;flex-direction:column;gap:8px}
- .action-btn{padding:13px 16px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
- .action-btn.danger{color:#ffb3c6}
- .action-btn:disabled{opacity:.35;cursor:not-allowed}
- .detail-list{display:flex;flex-direction:column;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:6px;max-height:56vh;overflow-y:auto}
- .detail-row{display:flex;justify-content:space-between;gap:14px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
- .detail-row:last-child{border-bottom:0}
- .detail-row > span{color:var(--muted)}
- .detail-row > b{font-weight:600;text-align:right;word-break:break-all}
- .detail-row > b.ok{color:#ffd6e8}
- .detail-row > b.warn{color:#ffc98b}
- .detail-row > b.mono{font-family:ui-monospace,Menlo,monospace;letter-spacing:.04em;font-size:12px}
- .dur-row{display:flex;gap:10px;align-items:flex-start}
- .dur-cell{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
- .dur-input-wrap{position:relative;width:100%}
- .dur-real{width:100%;height:54px;text-align:center;font-weight:800;font-size:19px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:13px;color:transparent;caret-color:transparent;outline:none;font-family:inherit;display:block;position:relative;z-index:1;-webkit-appearance:none;appearance:none}
- .dur-mirror{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:#f4f6ff;pointer-events:none;z-index:2;border-radius:13px}
- .dur-cell .unit{font-size:11.5px;color:var(--muted);text-align:center;font-weight:600}
-
- .island{position:fixed;top:12px;left:50%;transform:translateX(-50%) translateY(-120px);width:max-content;max-width:92vw;background:rgba(20,26,48,.95);border:1px solid rgba(255,182,213,.3);color:#f4f6ff;font-size:13px;font-weight:600;padding:12px 22px;border-radius:99px;z-index:1001;opacity:0;transition:.4s;pointer-events:none;display:flex;align-items:center;gap:8px}
- .island.show{transform:translateX(-50%) translateY(0);opacity:1}
- .island .dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#ffb6d5,#8ecbff);flex:0 0 auto}
-</style>
-</head>
+<html>
+<head><meta charset="utf-8"><title>YH Card Check</title></head>
 <body>
-
-<div class="app">
- <header class="topbar">
-  <div class="logo">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M20 4C10 4 4 10 4 20c10 0 16-6 16-16z"/>
-    <path d="M4 20 14 10"/>
-   </svg>
-  </div>
-  <div>
-   <div class="tb-title">YH 卡密管理后台</div>
-   <div class="tb-sub" id="pageTitle">卡密管理后台</div>
-  </div>
- </header>
-
- <main>
-  <section class="page active" id="page-home">
-   <div class="stat-grid" id="homeStats"></div>
-   <div class="section-title"><span>类型分布</span></div>
-   <div class="panel" id="homeDist"></div>
-  </section>
-
-  <section class="page" id="page-create">
-   <div class="field-label">选择卡密类型</div>
-   <div class="type-wrap">
-    <div class="type-indicator" id="typeIndicator"></div>
-    <div class="type-grid" id="typeGrid"></div>
-   </div>
-
-   <div class="morph-section">
-    <div class="field-label" id="morphLabel">创建数量</div>
-    <div class="morph-slot" id="morphSlot">
-     <div class="morph-panel morph-random">
-      <div class="code-input-wrap">
-       <input type="text" class="qty-real" id="qtyInput" value="1" inputmode="numeric" maxlength="3" placeholder="请输入要创建的数量" autocomplete="off">
-       <div class="qty-mirror" id="qtyMirror"></div>
-      </div>
-     </div>
-     <div class="morph-panel morph-custom">
-      <div class="code-input-wrap">
-       <textarea class="code-real" id="customCodeInput" placeholder="请输入卡密，一行一个"></textarea>
-       <div class="code-mirror" id="customCodeMirror"></div>
-      </div>
-     </div>
-    </div>
-   </div>
-
-   <button class="btn primary big" id="btnGenerate">生成</button>
-   <div class="result" id="createResult"></div>
-  </section>
-
-  <section class="page" id="page-manage">
-   <div class="search-box">
-    <input type="text" class="search-real" id="searchInput" placeholder="搜索卡密..." autocomplete="off">
-    <div class="search-mirror" id="searchMirror"></div>
-   </div>
-   <div class="chips" id="filterChips"></div>
-   <div class="list-head"><span id="listCount">共 0 张</span></div>
-   <div class="card-list" id="cardList"></div>
-  </section>
- </main>
-
- <nav class="tabbar" id="tabbar">
-  <div class="tab-indicator" id="tabIndicator"></div>
-  <button class="tab" data-page="create">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-   <span>创建</span>
-  </button>
-  <button class="tab active" data-page="home">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
-   <span>首页</span>
-  </button>
-  <button class="tab" data-page="manage">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>
-   <span>管理</span>
-  </button>
- </nav>
-</div>
-
-<div class="modal-mask" id="modalMask"><div class="modal" id="modalBox"></div></div>
-
 <script>
-const TYPES = {
-  day: { key:'day', name:'天卡', short:'天', color:'#ffb6d5', days:1 },
-  week: { key:'week', name:'周卡', short:'周', color:'#ffc4dd', days:7 },
-  month: { key:'month', name:'月卡', short:'月', color:'#a8d8ff', days:30 },
-  forever: { key:'forever', name:'永久', short:'永', color:'#8ecbff', days:null },
-  custom: { key:'custom', name:'自定义', short:'自', color:'#cfd9ff', days:null }
-};
-const TYPE_ORDER = ['day','week','month','forever','custom'];
-const state = { page: 'home', selectedType: 'day', count: 1, mode: 'random', filter: 'all', query: '' };
-const $ = id => document.getElementById(id);
-let cards = [];
+// ============================================
+// 只认这一张卡密，请把下面引号里的内容改成你自己的那张
+// ============================================
+var MY_CARD = "永久卡-7K2MQ-9P4LZ-3X8CB-6N1RW-5T0YH
+永久卡-2D9FJ-8S4VM-1G7EK-5U3AP-0O6IC
+永久卡-4L9BR-7E2NT-1Y8WF-6H3QD-9J5ZV
+永久卡-2A7SN-8M4KX-3C0PL-5R1TG-7B6YE
+永久卡-1F9HU-4W2DS-8Q5JO-0K3VA-6Z7NM
+永久卡-2C9RP-4T1LB-8Y5EH-3G0FJ-7D6SK
+永久卡-1V4AQ-5N8MW-9X2CR-3L7PT-0B5YF
+永久卡-8H1GD-2J9KS-6U4VZ-7A3NE-5C0ML
+永久卡-9R2TG-4Y8BO-1P6HN-3F7DV-0K5JA
+永久卡-8S1QM-6W4EC-2Z9RP-7T3LB-5N0YR
+永久卡-3K9MT-6P1LZ-0X4CB-8N2RW-7T5YH
+永久卡-1D6FJ-9S3VM-5G7EK-2U8AP-4O0IC
+永久卡-6L2BR-8E1NT-5Y9WF-3H7QD-1J4ZV
+永久卡-9A3SN-2M7KX-6C1PL-8R4TG-0B5YE
+永久卡-3F8HU-1W6DS-9Q2JO-7K4VA-2Z5NM
+永久卡-6C1RP-9T3LB-2Y8EH-5G0FJ-4D7SK
+永久卡-8V5AQ-1N6MW-3X9CR-7L2PT-4B0YF
+永久卡-1H9GD-6J3KS-8U5VZ-2A7NE-0C4ML
+永久卡-5R8TG-1Y4BO-3P9HN-7F2DV-6K0JA
+永久卡-4S2QM-8W5EC-1Z6RP-0T9LB-3N7YR
+永久卡-9K4MT-6P0LZ-2X8CB-5N1RW-3T7YH
+永久卡-0D6FJ-2S5VM-8G4EK-1U9AP-7O3IC
+永久卡-8L1BR-4E0NT-7Y6WF-2H9QD-5J3ZV
+永久卡-4A5SN-1M6KX-9C0PL-3R8TG-7B2YE
+永久卡-2F7HU-5W9DS-0Q4JO-8K1VA-3Z6NM
+永久卡-9C3RP-6T2LB-4Y0EH-7G5FJ-1D8SK
+永久卡-5V1AQ-8N7MW-0X3CR-2L9PT-6B4YF
+永久卡-7H3GD-1J9KS-6U5VZ-4A2NE-0C8ML
+永久卡-6R1TG-9Y8BO-2P0HN-3F7DV-4K5JA
+永久卡-0S9QM-4W3EC-6Z1RP-5T8LB-2N0YR
+永久卡-3K7MT-1P5LZ-8X2CB-4N0RW-9T6YH
+永久卡-2D5FJ-7S1VM-0G8EK-9U3AP-6O4IC
+永久卡-5L0BR-1E9NT-4Y7WF-0H2QD-8J6ZV
+永久卡-9A3SN-2M7KX-5C1PL-0R4TG-1B8YE
+永久卡-6F4HU-8W0DS-3Q7JO-2K5VA-9Z1NM
+永久卡-0C8RP-4T6LB-7Y3EH-1G2FJ-5D9SK
+永久卡-1V9AQ-3N4MW-6X0CR-7L2PT-8B5YF
+永久卡-6H0GD-4J3KS-9U8VZ-1A7NE-2C5ML
+永久卡-8R2TG-5Y1BO-0P9HN-6F4DV-3K7JA
+永久卡-3S6QM-8W0EC-2Z9RP-7T4LB-5N1YR
+永久卡-1K0MT-4P9LZ-6X5CB-2N3RW-8T0YH
+永久卡-9D3FJ-0S6VM-5G1EK-8U7AP-2O4IC
+永久卡-3L5BR-9E2NT-0Y4WF-6H1QD-7J8ZV
+永久卡-6A0SN-4M9KX-1C7PL-8R5TG-3B2YE
+永久卡-0F3HU-7W5DS-1Q8JO-6K0VA-4Z9NM
+永久卡-7C1RP-3T0LB-9Y6EH-5G4FJ-2D7SK
+永久卡-8V2AQ-1N5MW-4X9CR-0L6PT-3B8YF
+永久卡-1H5GD-7J8KS-4U0VZ-9A3NE-6C2ML
+永久卡-0R9TG-2Y6BO-5P1HN-8F3DV-7K4JA
+永久卡-4S1QM-9W6EC-7Z0RP-3T5LB-1N2YR
+永久卡-5K2MT-8P4LZ-1X7CB-9N0RW-6T3YH
+永久卡-6D8FJ-3S2VM-7G5EK-0U4AP-1O9IC
+永久卡-1L6BR-8E3NT-5Y0WF-4H7QD-9J2ZV
+永久卡-0A4SN-8M3KX-6C1PL-2R5TG-7B9YE
+永久卡-3F9HU-1W6DS-7Q0JO-4K2VA-8Z5NM
+永久卡-2C7RP-0T1LB-6Y4EH-9G3FJ-5D8SK
+永久卡-9V5AQ-7N1MW-2X6CR-4L0PT-8B3YF
+永久卡-8H2GD-5J0KS-3U9VZ-6A4NE-1C7ML
+永久卡-4R6TG-0Y3BO-9P7HN-1F5DV-2K8JA
+永久卡-9S0QM-1W4EC-5Z6RP-8T2LB-7N9YR
+永久卡-0K8MT-2P7LZ-9X1CB-6N5RW-4T9YH
+永久卡-7D0FJ-4S8VM-2G9EK-5U1AP-0O6IC
+永久卡-6L3BR-0E5NT-9Y8WF-1H4QD-2J7ZV
+永久卡-3A8SN-5M0KX-7C2PL-9R1TG-4B6YE
+永久卡-7F1HU-4W0DS-8Q5JO-3K6VA-2Z9NM
+永久卡-8C5RP-9T7LB-3Y1EH-0G6FJ-4D2SK
+永久卡-2V0AQ-6N9MW-8X3CR-1L7PT-5B4YF
+永久卡-9H6GD-2J4KS-1U5VZ-7A0NE-8C3ML
+永久卡-5R3TG-1Y9BO-0P6HN-2F8DV-4K1JA
+永久卡-2S8QM-7W5EC-0Z3RP-9T1LB-6N4YR
+永久卡-7K3MT-0P2LZ-5X9CB-1N8RW-2T6YH
+永久卡-4D9FJ-1S7VM-6G0EK-3U8AP-5O2IC
+永久卡-9L2BR-6E4NT-1Y3WF-8H5QD-0J9ZV
+永久卡-5A1SN-3M8KX-0C6PL-4R2TG-9B7YE
+永久卡-1F0HU-6W3DS-2Q9JO-7K4VA-5Z8NM
+永久卡-4C6RP-2T5LB-8Y0EH-3G7FJ-9D1SK
+永久卡-7V4AQ-9N3MW-1X5CR-6L8PT-0B2YF
+永久卡-0H7GD-3J6KS-5U1VZ-2A9NE-4C0ML
+永久卡-1R5TG-8Y2BO-7P4HN-9F3DV-0K6JA
+永久卡-6S4QM-2W8EC-3Z5RP-7T0LB-9N1YR
+永久卡-4K9MT-5P0LZ-3X6CB-7N1RW-0T8YH
+永久卡-8D4FJ-6S0VM-9G2EK-1U7AP-3O5IC
+永久卡-2L7BR-5E1NT-8Y9WF-0H6QD-3J4ZV
+永久卡-1A6SN-0M2KX-4C8PL-7R3TG-5B0YE
+永久卡-5F8HU-2W1DS-9Q6JO-0K3VA-7Z4NM
+永久卡-0C9RP-5T3LB-2Y7EH-6G1FJ-8D0SK
+永久卡-4V6AQ-0N2MW-7X9CR-3L5PT-1B7YF
+永久卡-3H1GD-8J5KS-0U4VZ-9A2NE-6C7ML
+永久卡-7R0TG-4Y6BO-1P8HN-5F2DV-9K3JA
+永久卡-8S5QM-6W1EC-4Z9RP-0T7LB-2N3YR
+永久卡-2K5MT-9P8LZ-0X4CB-6N7RW-1T0YH
+永久卡-3D6FJ-9S4VM-7G1EK-2U0AP-8O9IC
+永久卡-4L0BR-7E8NT-2Y1WF-5H3QD-1J6ZV
+永久卡-8A2SN-1M6KX-3C0PL-5R9TG-0B7YE
+永久卡-2F5HU-0W9DS-6Q3JO-1K8VA-4Z2NM
+永久卡-9C1RP-7T0LB-5Y2EH-4G8FJ-3D6SK
+永久卡-0V5AQ-4N7MW-2X1CR-9L3PT-6B0YF
+永久卡-5H2GD-1J9KS-8U0VZ-3A6NE-7C4ML
+永久卡-6R8TG-0Y5BO-2P1HN-4F9DV-1K7JA
+永久卡-3S9QM-8W6EC-1Z4RP-5T2LB-0N7YR
+永久卡-8K1MT-6P5LZ-3X0CB-2N9RW-7T4YH
+永久卡-5D7FJ-1S9VM-6G3EK-0U5AP-8O2IC
+永久卡-1L9BR-3E6NT-7Y0WF-9H2QD-4J8ZV
+永久卡-6A3SN-9M1KX-2C5PL-0R7TG-8B4YE
+永久卡-9F2HU-5W7DS-1Q0JO-6K3VA-2Z8NM
+永久卡-3C8RP-1T4LB-9Y5EH-7G0FJ-5D2SK
+永久卡-7V3AQ-2N0MW-6X8CR-4L1PT-9B5YF
+永久卡-4H9GD-8J2KS-5U6VZ-0A1NE-3C7ML
+永久卡-2R7TG-9Y0BO-4P3HN-6F1DV-8K5JA
+永久卡-1S0QM-5W9EC-8Z2RP-3T6LB-7N4YR
+永久卡-9K6MT-3P1LZ-7X5CB-0N2RW-6T8YH
+永久卡-0D1FJ-8S6VM-4G9EK-5U2AP-1O7IC
+永久卡-7L4BR-2E9NT-6Y3WF-8H0QD-3J5ZV
+永久卡-5A9SN-7M2KX-1C4PL-6R0TG-9B3YE
+永久卡-8F6HU-3W1DS-5Q9JO-2K7VA-0Z4NM
+永久卡-2C0RP-8T9LB-1Y6EH-4G3FJ-7D5SK
+永久卡-6V8AQ-5N1MW-9X4CR-0L2PT-3B7YF
+永久卡-1H4GD-6J7KS-2U9VZ-8A5NE-0C3ML
+永久卡-7R2TG-3Y8BO-5P0HN-1F6DV-9K4JA
+永久卡-0S5QM-9W2EC-6Z8RP-4T1LB-8N7YR
+永久卡-5K1MT-7P4LZ-2X9CB-3N6RW-1T0YH
+永久卡-4D8FJ-0S2VM-9G5EK-7U1AP-6O3IC
+永久卡-9L6BR-5E0NT-3Y7WF-2H8QD-1J4ZV
+永久卡-8A1SN-4M7KX-0C3PL-9R5TG-2B6YE
+永久卡-1F3HU-9W8DS-7Q2JO-5K0VA-4Z6NM
+永久卡-6C4RP-1T8LB-0Y2EH-9G7FJ-3D5SK
+永久卡-3V7AQ-8N0MW-5X1CR-2L9PT-6B4YF
+永久卡-7H0GD-2J5KS-4U8VZ-6A3NE-9C1ML
+永久卡-0R4TG-7Y9BO-3P5HN-8F2DV-1K6JA
+永久卡-9S3QM-6W0EC-2Z7RP-5T8LB-4N1YR
+永久卡-2K8MT-1P6LZ-9X3CB-7N4RW-0T5YH
+永久卡-8D0FJ-5S7VM-1G3EK-6U9AP-2O4IC
+永久卡-0L3BR-6E5NT-8Y2WF-1H9QD-7J0ZV
+永久卡-4A7SN-2M0KX-9C6PL-5R1TG-8B3YE
+永久卡-7F5HU-0W4DS-6Q8JO-9K2VA-1Z7NM
+永久卡-1C9RP-4T7LB-3Y0EH-8G6FJ-2D5SK
+永久卡-5V0AQ-9N3MW-7X2CR-1L8PT-6B4YF
+永久卡-6H8GD-0J1KS-9U4VZ-3A5NE-7C2ML
+永久卡-9R7TG-5Y3BO-8P6HN-0F1DV-4K9JA
+永久卡-7S2QM-3W9EC-1Z0RP-6T4LB-9N8YR
+永久卡-1K4MT-8P2LZ-6X7CB-0N3RW-5T9YH
+永久卡-3D5FJ-7S1VM-2G8EK-9U0AP-4O6IC
+永久卡-8L2BR-1E4NT-0Y6WF-7H3QD-5J9ZV
+永久卡-6A0SN-9M5KX-4C2PL-1R8TG-7B3YE
+永久卡-0F9HU-6W3DS-2Q5JO-8K1VA-9Z4NM
+永久卡-5C7RP-3T6LB-9Y1EH-0G8FJ-2D4SK
+永久卡-2V9AQ-7N4MW-0X8CR-6L3PT-1B5YF
+永久卡-8H1GD-4J0KS-5U7VZ-2A9NE-6C3ML
+永久卡-7R5TG-2Y8BO-9P0HN-4F6DV-3K1JA
+永久卡-0S4QM-8W7EC-3Z2RP-9T5LB-1N6YR
+永久卡-6K0MT-3P9LZ-1X4CB-8N7RW-2T5YH
+永久卡-9D2FJ-6S8VM-0G1EK-4U5AP-7O3IC
+永久卡-1L7BR-9E0NT-5Y3WF-2H6QD-8J4ZV
+永久卡-5A6SN-0M2KX-8C9PL-3R7TG-1B4YE
+永久卡-4F8HU-2W0DS-7Q6JO-1K9VA-5Z3NM
+永久卡-3C1RP-8T5LB-6Y9EH-2G0FJ-7D4SK
+永久卡-7D5FJ-2S0VM-9G6EK-4U1AP-8O3IC
+永久卡-5L8BR-9E3NT-6Y1WF-0H7QD-2J5ZV
+永久卡-2A4SN-6M9KX-8C0PL-5R3TG-1B7YE
+永久卡-8F1HU-9W6DS-0Q4JO-7K2VA-3Z5NM
+永久卡-0C7RP-2T4LB-5Y9EH-8G6FJ-1D3SK
+永久卡-6V3AQ-1N8MW-9X5CR-0L2PT-4B7YF
+永久卡-3H5GD-7J2KS-9U8VZ-1A6NE-0C4ML
+永久卡-9R0TG-1Y3BO-6P7HN-5F4DV-2K9JA
+永久卡-7S2QM-5W9EC-8Z1RP-4T6LB-0N3YR
+永久卡-1K4MT-9P0LZ-3X5CB-8N7RW-6T2YH
+永久卡-4D7FJ-0S2VM-9G5EK-1U8AP-5O3IC
+永久卡-9L1BR-2E4NT-7Y0WF-6H9QD-3J5ZV
+永久卡-2A6SN-5M8KX-9C1PL-0R7TG-8B3YE
+永久卡-6F0HU-3W9DS-1Q5JO-9K7VA-2Z4NM
+永久卡-5C2RP-7T8LB-0Y3EH-9G1FJ-6D4SK
+永久卡-1V7AQ-9N4MW-2X6CR-8L0PT-5B3YF
+永久卡-8H2GD-4J6KS-9U0VZ-7A5NE-1C3ML
+永久卡-0R9TG-6Y2BO-3P8HN-9F0DV-5K4JA
+永久卡-4S7QM-1W3EC-9Z6RP-0T2LB-8N5YR
+永久卡-9K1MT-8P6LZ-2X0CB-5N9RW-3T7YH
+永久卡-7D3FJ-4S8VM-0G1EK-6U9AP-2O5IC
+永久卡-0L6BR-8E2NT-9Y4WF-1H3QD-7J5ZV
+永久卡-5A0SN-2M7KX-6C9PL-9R1TG-3B4YE
+永久卡-1F3HU-7W0DS-8Q6JO-5K2VA-9Z4NM
+永久卡-3C9RP-6T1LB-4Y7EH-2G5FJ-0D8SK
+永久卡-8V0AQ-2N9MW-7X3CR-6L1PT-4B5YF
+永久卡-9H7GD-1J3KS-5U0VZ-8A6NE-2C4ML
+永久卡-6R1TG-9Y7BO-0P3HN-4F8DV-1K5JA
+永久卡-2S6QM-0W9EC-7Z3RP-5T8LB-9N1YR
+永久卡-0K8MT-7P1LZ-4X9CB-2N6RW-5T3YH
+永久卡-5D2FJ-9S0VM-6G7EK-1U3AP-4O8IC
+永久卡-9L4BR-0E7NT-5Y2WF-8H6QD-1J3ZV
+永久卡-1A9SN-4M3KX-7C0PL-6R8TG-9B2YE
+永久卡-3F5HU-9W1DS-6Q0JO-4K7VA-1Z9NM
+永久卡-7C1RP-3T9LB-8Y4EH-0G2FJ-5D7SK
+永久卡-2V5AQ-8N0MW-1X7CR-9L3PT-6B2YF
+永久卡-9H0GD-5J8KS-2U4VZ-7A1NE-3C9ML
+永久卡-4R6TG-2Y1BO-9P7HN-8F3DV-0K2JA
+永久卡-8S1QM-6W4EC-0Z9RP-3T7LB-2N5YR
+永久卡-1K9MT-4P3LZ-7X2CB-0N8RW-9T5YH
+永久卡-6D7FJ-2S1VM-9G0EK-5U4AP-8O3IC
+永久卡-3L5BR-7E9NT-0Y2WF-4H8QD-6J1ZV
+永久卡-0A8SN-9M1KX-6C5PL-2R3TG-7B4YE
+永久卡-9F2HU-6W7DS-5Q0JO-8K1VA-3Z6NM
+永久卡-5C0RP-2T6LB-9Y1EH-7G4FJ-8D3SK
+永久卡-4V8AQ-6N3MW-0X9CR-1L5PT-7B2YF
+永久卡-7H1GD-3J9KS-8U2VZ-5A0NE-6C4ML
+永久卡-0R5TG-9Y6BO-2P8HN-7F1DV-4K3JA
+永久卡-2S4QM-9W7EC-6Z3RP-1T5LB-8N0YR
+永久卡-8K2MT-5P9LZ-3X1CB-7N4RW-6T8YH
+永久卡-1D6FJ-0S4VM-9G8EK-2U7AP-5O3IC
+永久卡-9L3BR-6E0NT-4Y7WF-8H1QD-5J2ZV
+永久卡-7A5SN-2M8KX-0C9PL-3R1TG-6B5YE
+永久卡-4F9HU-8W3DS-1Q6JO-7K0VA-2Z5NM
+永久卡-6C2RP-9T5LB-1Y0EH-3G8FJ-7D4SK
+永久卡-0V7AQ-2N1MW-9X6CR-4L3PT-5B8YF
+永久卡-5H9GD-8J4KS-0U6VZ-3A2NE-9C7ML
+永久卡-3R1TG-6Y9BO-8P4HN-5F7DV-0K2JA
+永久卡-9S5QM-3W8EC-7Z0RP-2T9LB-4N6YR
+永久卡-0K3MT-8P5LZ-1X9CB-6N2RW-9T7YH
+永久卡-7D1FJ-5S3VM-0G9EK-8U6AP-4O2IC
+永久卡-2L8BR-9E1NT-7Y5WF-0H4QD-3J9ZV
+永久卡-8A0SN-3M6KX-5C2PL-9R7TG-1B4YE
+永久卡-1F6HU-8W0DS-4Q9JO-2K5VA-7Z3NM
+永久卡-9C5RP-1T0LB-6Y7EH-8G2FJ-4D9SK
+永久卡-3V1AQ-9N7MW-5X4CR-2L8PT-0B6YF
+永久卡-6H3GD-2J5KS-7U9VZ-1A4NE-8C0ML
+永久卡-4R8TG-1Y6BO-9P2HN-3F5DV-7K0JA
+永久卡-8S9QM-5W2EC-0Z4RP-6T1LB-9N3YR
+永久卡-9K7MT-2P4LZ-8X1CB-5N0RW-3T6YH
+永久卡-1D4FJ-7S2VM-9G5EK-0U8AP-6O3IC
+永久卡-5L9BR-1E6NT-8Y2WF-4H0QD-7J3ZV
+永久卡-0A1SN-8M5KX-2C7PL-6R9TG-3B4YE
+永久卡-7F4HU-3W8DS-9Q1JO-5K6VA-0Z2NM
+永久卡-2C6RP-8T3LB-5Y9EH-1G7FJ-4D0SK
+永久卡-9V2AQ-4N8MW-7X1CR-3L5PT-6B9YF
+永久卡-1H5GD-6J2KS-0U8VZ-9A3NE-7C4ML
+永久卡-8R3TG-9Y1BO-4P6HN-2F0DV-5K9JA
+永久卡-6S0QM-4W7EC-8Z2RP-9T5LB-1N3YR
+永久卡-0K5MT-9P1LZ-6X8CB-3N4RW-7T2YH
+永久卡-4D9FJ-1S5VM-8G0EK-6U3AP-2O7IC
+永久卡-7L2BR-4E8NT-9Y1WF-5H6QD-0J3ZV
+永久卡-3A9SN-7M4KX-1C6PL-8R0TG-5B2YE
+永久卡-6F1HU-0W5DS-9Q7JO-4K2VA-8Z3NM
+永久卡-9C4RP-5T8LB-7Y0EH-2G6FJ-1D9SK
+永久卡-8V6AQ-3N1MW-0X9CR-5L2PT-7B4YF
+永久卡-0H7GD-9J3KS-6U4VZ-1A8NE-2C5ML
+永久卡-5R2TG-8Y9BO-7P4HN-3F1DV-6K0JA
+永久卡-1S6QM-4W9EC-2Z7RP-8T3LB-0N5YR
+永久卡-9K8MT-6P2LZ-3X7CB-1N5RW-8T4YH
+永久卡-2D0FJ-9S7VM-5G4EK-8U1AP-3O6IC
+永久卡-6L5BR-2E9NT-0Y4WF-7H3QD-1J8ZV
+永久卡-4A7SN-0M2KX-9C5PL-6R8TG-3B1YE
+永久卡-8F9HU-5W0DS-3Q6JO-7K4VA-2Z1NM
+永久卡-0C3RP-9T6LB-4Y2EH-8G7FJ-5D1SK
+永久卡-7V4AQ-1N9MW-6X0CR-2L5PT-9B8YF
+永久卡-3H6GD-8J1KS-5U9VZ-0A7NE-4C2ML
+永久卡-9R4TG-3Y8BO-1P5HN-7F6DV-2K9JA
+永久卡-5S1QM-9W3EC-8Z6RP-4T0LB-7N2YR
+永久卡-1K0MT-5P7LZ-9X4CB-2N8RW-3T6YH
+永久卡-8D5FJ-3S1VM-7G9EK-0U4AP-6O2IC
+永久卡-0L9BR-7E3NT-2Y8WF-5H1QD-9J4ZV
+永久卡-6A2SN-8M0KX-4C9PL-7R3TG-2B5YE
+永久卡-2F7HU-9W4DS-6Q1JO-0K8VA-5Z3NM
+永久卡-9C0RP-6T9LB-3Y7EH-1G4FJ-8D2SK
+永久卡-4V5AQ-9N2MW-0X7CR-8L1PT-6B3YF
+永久卡-1H8GD-5J0KS-7U2VZ-9A6NE-3C4ML
+永久卡-7R9TG-2Y1BO-6P4HN-8F5DV-0K3JA
+永久卡-3S5QM-8W1EC-9Z4RP-5T7LB-1N6YR
+永久卡-0K2MT-9P6LZ-4X1CB-7N3RW-5T8YH
+永久卡-5D8FJ-2S4VM-0G6EK-9U1AP-7O3IC
+永久卡-9L7BR-5E0NT-8Y2WF-3H6QD-1J4ZV
+永久卡-1A3SN-7M9KX-5C0PL-4R2TG-8B6YE
+永久卡-8F2HU-4W7DS-0Q3JO-6K5VA-9Z1NM
+永久卡-7C9RP-3T4LB-8Y1EH-5G0FJ-2D6SK
+永久卡-2V8AQ-6N5MW-9X3CR-0L7PT-4B1YF
+永久卡-9H4GD-1J7KS-6U0VZ-8A2NE-5C9ML
+永久卡-4R1TG-8Y6BO-2P9HN-7F3DV-0K5JA
+永久卡-6S3QM-9W8EC-4Z1RP-0T6LB-5N2YR
+永久卡-1K9MT-3P5LZ-8X2CB-6N0RW-4T7YH
+永久卡-8D6FJ-0S3VM-5G9EK-7U2AP-9O1IC
+永久卡-0L4BR-8E6NT-3Y9WF-1H5QD-2J7ZV
+永久卡-5A1SN-2M8KX-9C7PL-6R0TG-3B4YE
+永久卡-9F8HU-6W2DS-0Q5JO-8K1VA-4Z7NM
+永久卡-3C5RP-9T0LB-7Y8EH-2G4FJ-6D1SK
+永久卡-6V2AQ-1N7MW-5X0CR-9L3PT-8B6YF
+永久卡-0H9GD-4J2KS-8U6VZ-3A1NE-7C5ML
+永久卡-7R5TG-0Y9BO-6P2HN-4F8DV-1K3JA
+永久卡-2S1QM-7W6EC-0Z5RP-8T9LB-4N3YR
+永久卡-9K4MT-1P8LZ-7X0CB-3N6RW-5T2YH
+永久卡-5D1FJ-8S4VM-2G0EK-9U7AP-6O3IC
+永久卡-1L9BR-5E2NT-7Y8WF-0H4QD-9J6ZV
+永久卡-8A3SN-1M7KX-4C9PL-5R0TG-2B8YE
+永久卡-0F5HU-9W1DS-6Q4JO-7K3VA-8Z2NM
+永久卡-7C2RP-4T8LB-9Y0EH-1G6FJ-3D5SK
+永久卡-4V9AQ-8N1MW-2X5CR-0L7PT-6B3YF
+永久卡-9H0GD-5J6KS-3U8VZ-7A1NE-2C9ML
+永久卡-2R7TG-9Y4BO-8P0HN-6F3DV-5K1JA
+永久卡-0S6QM-8W2EC-5Z9RP-7T4LB-3N1YR
+永久卡-6K8MT-2P1LZ-9X5CB-0N7RW-4T3YH
+永久卡-3D9FJ-7S0VM-6G4EK-1U8AP-9O2IC
+永久卡-9L5BR-3E8NT-0Y1WF-6H7QD-4J2ZV
+永久卡-2A0SN-6M4KX-9C8PL-1R5TG-7B3YE
+永久卡-5F7HU-0W9DS-2Q1JO-8K4VA-9Z6NM
+永久卡-8C1RP-5T7LB-3Y9EH-0G6FJ-1D4SK
+永久卡-1V4AQ-9N6MW-7X2CR-3L0PT-8B5YF
+永久卡-7H2GD-4J9KS-1U0VZ-6A5NE-9C3ML
+永久卡-0R8TG-6Y1BO-9P7HN-5F4DV-2K3JA
+永久卡-9S3QM-1W7EC-8Z0RP-6T2LB-4N9YR
+永久卡-4K6MT-9P0LZ-7X3CB-1N5RW-8T2YH
+永久卡-6D2FJ-3S9VM-0G7EK-5U1AP-8O4IC
+永久卡-1L0BR-9E4NT-6Y7WF-3H2QD-0J5ZV
+永久卡-8A5SN-4M1KX-7C0PL-2R9TG-6B3YE
+永久卡-0F2HU-8W7DS-5Q9JO-1K3VA-4Z6NM
+永久卡-9C6RP-2T0LB-8Y3EH-7G5FJ-1D9SK
+永久卡-3V7AQ-5N2MW-0X8CR-9L4PT-6B1YF
+永久卡-7H9GD-2J5KS-8U1VZ-4A7NE-0C3ML
+永久卡-5R0TG-8Y9BO-3P6HN-1F2DV-9K7JA
+永久卡-1S8QM-5W3EC-9Z2RP-0T7LB-6N4YR
+永久卡-8K4MT-3P9LZ-6X1CB-7N2RW-0T5YH
+永久卡-2D7FJ-9S3VM-4G8EK-6U0AP-1O5IC
+永久卡-9L6BR-1E9NT-8Y3WF-5H0QD-2J7ZV
+永久卡-0A4SN-9M2KX-5C7PL-1R8TG-3B6YE
+永久卡-6F9HU-2W4DS-8Q0JO-9K7VA-5Z1NM
+永久卡-5C3RP-9T1LB-0Y8EH-6G2FJ-7D5SK
+永久卡-7V0AQ-4N9MW-2X6CR-8L1PT-0B7YF
+永久卡-1H6GD-9J2KS-6U5VZ-3A0NE-8C7ML
+永久卡-4R9TG-1Y7BO-8P2HN-9F6DV-0K5JA
+永久卡-9S0QM-6W5EC-4Z8RP-2T1LB-7N3YR
+永久卡-0K7MT-5P2LZ-9X8CB-6N1RW-4T0YH
+永久卡-7D3FJ-1S8VM-5G0EK-9U6AP-2O4IC
+永久卡-2L4BR-7E0NT-9Y6WF-4H1QD-8J3ZV
+永久卡-5A8SN-0M3KX-6C1PL-7R9TG-2B4YE
+永久卡-8F1HU-5W9DS-7Q2JO-0K6VA-3Z8NM
+永久卡-9C7RP-4T5LB-1Y2EH-8G0FJ-6D3SK
+永久卡-6V9AQ-3N0MW-8X5CR-1L7PT-2B4YF
+永久卡-0H2GD-8J7KS-4U9VZ-6A1NE-5C3ML
+永久卡-7R5TG-2Y0BO-9P8HN-1F3DV-6K4JA
+永久卡-3S9QM-7W4EC-0Z2RP-5T8LB-1N7YR
+永久卡-8K1MT-4P6LZ-9X3CB-2N0RW-7T5YH
+永久卡-1D9FJ-6S2VM-3G7EK-8U4AP-0O5IC
+永久卡-9L3BR-1E7NT-4Y2WF-6H9QD-5J0ZV
+永久卡-4A6SN-8M1KX-0C3PL-9R5TG-2B7YE
+永久卡-7F0HU-3W6DS-9Q4JO-5K1VA-8Z2NM
+永久卡-0C5RP-8T2LB-6Y9EH-4G7FJ-1D3SK
+永久卡-9V1AQ-5N6MW-2X0CR-7L3PT-4B8YF
+永久卡-3H7GD-1J4KS-9U2VZ-8A5NE-0C6ML
+永久卡-6R2TG-9Y8BO-5P1HN-0F4DV-3K7JA
+永久卡-2S5QM-8W0EC-6Z9RP-1T4LB-7N2YR
+永久卡-0K9MT-6P3LZ-2X7CB-8N1RW-5T4YH
+永久卡-9D6FJ-4S0VM-7G2EK-1U9AP-3O8IC
+永久卡-1L7BR-9E3NT-5Y0WF-2H8QD-6J4ZV
+永久卡-8A2SN-5M9KX-3C6PL-0R1TG-7B4YE
+永久卡-7F8HU-2W5DS-9Q1JO-6K3VA-0Z4NM
+永久卡-4C0RP-9T7LB-1Y3EH-5G6FJ-8D2SK
+永久卡-6V4AQ-0N8MW-3X1CR-9L5PT-7B2YF
+永久卡-0H3GD-7J9KS-5U6VZ-2A0NE-4C8ML
+永久卡-9R7TG-3Y1BO-6P0HN-8F5DV-2K4JA
+永久卡-5S2QM-9W8EC-0Z6RP-4T3LB-7N1YR
+永久卡-2K8MT-7P4LZ-9X0CB-5N6RW-1T3YH
+永久卡-7D2FJ-5S9VM-0G4EK-3U7AP-8O1IC
+永久卡-0L9BR-6E2NT-8Y7WF-1H5QD-4J3ZV
+永久卡-9A5SN-2M0KX-7C8PL-6R3TG-1B9YE
+永久卡-1F4HU-9W7DS-5Q2JO-0K8VA-6Z3NM
+永久卡-8C9RP-3T6LB-7Y4EH-2G0FJ-9D5SK
+永久卡-5V2AQ-9N7MW-0X4CR-8L1PT-3B6YF
+永久卡-7H5GD-2J0KS-9U3VZ-4A8NE-1C6ML
+永久卡-0R3TG-8Y9BO-5P2HN-7F1DV-9K6JA
+永久卡-3S7QM-1W4EC-9Z5RP-8T2LB-0N6YR
+永久卡-9K0MT-4P8LZ-7X3CB-1N9RW-2T5YH
+永久卡-6D5FJ-9S1VM-3G7EK-0U4AP-8O2IC
+永久卡-1L8BR-4E6NT-9Y2WF-7H0QD-3J5ZV
+永久卡-8A1SN-3M9KX-6C4PL-5R2TG-0B7YE
+永久卡-2F7HU-8W3DS-0Q9JO-6K1VA-9Z5NM
+永久卡-0C4RP-5T9LB-2Y7EH-8G3FJ-6D1SK
+永久卡-9V8AQ-1N2MW-7X5CR-3L6PT-4B0YF
+永久卡-5H6GD-9J3KS-0U7VZ-2A4NE-8C1ML
+永久卡-7R0TG-4Y8BO-1P6HN-9F2DV-5K3JA
+永久卡-4S9QM-0W7EC-6Z3RP-1T8LB-2N5YR
+永久卡-8K3MT-5P1LZ-9X6CB-4N0RW-7T2YH
+永久卡-3D8FJ-1S4VM-6G9EK-0U7AP-5O2IC
+永久卡-9L0BR-7E5NT-2Y8WF-4H3QD-1J6ZV
+永久卡-6A9SN-3M2KX-8C7PL-0R5TG-9B1YE
+永久卡-1F6HU-7W0DS-4Q8JO-9K3VA-2Z5NM
+永久卡-0C7RP-9T1LB-5Y4EH-3G8FJ-7D6SK
+永久卡-8V3AQ-6N9MW-1X0CR-5L7PT-2B4YF
+永久卡-4H1GD-9J6KS-7U3VZ-0A2NE-8C5ML
+永久卡-9R5TG-2Y0BO-6P8HN-4F1DV-7K3JA
+永久卡-7S0QM-3W6EC-9Z1RP-8T5LB-0N2YR
+永久卡-0K4MT-8P9LZ-5X2CB-7N6RW-3T1YH
+永久卡-9D7FJ-6S0VM-1G4EK-3U8AP-5O2IC
+永久卡-2L3BR-9E7NT-0Y5WF-6H1QD-8J4ZV
+永久卡-5A6SN-1M8KX-7C0PL-4R9TG-3B2YE
+永久卡-8F0HU-5W9DS-2Q7JO-6K4VA-1Z3NM
+永久卡-3C2RP-8T5LB-9Y0EH-1G7FJ-4D6SK
+永久卡-7V1AQ-4N3MW-6X9CR-0L2PT-8B5YF
+永久卡-0H8GD-5J1KS-9U6VZ-3A7NE-2C4ML
+永久卡-6R9TG-1Y3BO-8P0HN-5F6DV-9K2JA
+永久卡-1S5QM-8W0EC-4Z9RP-7T3LB-2N6YR
+永久卡-9K2MT-0P7LZ-6X4CB-1N8RW-3T5YH
+永久卡-4D1FJ-9S6VM-2G0EK-8U5AP-7O3IC
+永久卡-8L9BR-3E1NT-7Y6WF-0H2QD-5J4ZV
+永久卡-6A0SN-9M4KX-1C8PL-7R2TG-3B5YE
+永久卡-2F3HU-6W8DS-9Q1JO-0K5VA-7Z4NM
+永久卡-0C6RP-3T9LB-8Y2EH-5G1FJ-9D7SK
+永久卡-7V5AQ-2N0MW-9X6CR-4L8PT-1B3YF
+永久卡-5H9GD-7J4KS-0U2VZ-8A1NE-6C5ML
+永久卡-9R1TG-5Y6BO-2P9HN-7F3DV-0K8JA
+永久卡-3S4QM-9W2EC-7Z6RP-1T0LB-5N8YR
+永久卡-0K6MT-3P1LZ-9X7CB-2N4RW-8T5YH
+永久卡-6D3FJ-1S9VM-4G2EK-7U0AP-9O5IC
+永久卡-9L8BR-5E3NT-1Y7WF-8H6QD-0J2ZV
+永久卡-1A2SN-7M6KX-9C0PL-3R5TG-8B4YE
+永久卡-4F9HU-1W7DS-6Q3JO-0K2VA-9Z8NM
+永久卡-8C5RP-2T0LB-7Y9EH-4G3FJ-1D6SK
+永久卡-9V4AQ-6N8MW-3X1CR-7L0PT-2B9YF
+永久卡-0H3GD-9J7KS-4U1VZ-6A8NE-5C2ML
+永久卡-2R6TG-7Y0BO-9P4HN-1F8DV-3K5JA
+永久卡-6S9QM-0W4EC-8Z3RP-5T7LB-2N1YR
+永久卡-1K5MT-7P2LZ-4X9CB-9N0RW-6T8YH
+永久卡-8D6FJ-4S2VM-9G1EK-3U7AP-0O5IC
+永久卡-5L1BR-8E9NT-2Y4WF-7H0QD-6J3ZV
+永久卡-9A7SN-4M0KX-1C6PL-8R3TG-2B5YE
+永久卡-3F2HU-9W5DS-7Q0JO-6K8VA-1Z4NM
+永久卡-0C9RP-7T3LB-2Y5EH-9G1FJ-8D6SK
+永久卡-7V0AQ-5N4MW-8X2CR-1L9PT-3B6YF
+永久卡-6H1GD-9J8KS-0U5VZ-4A3NE-2C7ML
+永久卡-9R2TG-6Y7BO-3P1HN-0F9DV-5K4JA
+永久卡-4S8QM-1W3EC-9Z5RP-6T0LB-7N2YR
+永久卡-8K7MT-4P0LZ-1X6CB-5N3RW-2T9YH
+永久卡-2D5FJ-7S8VM-3G9EK-0U4AP-6O1IC
+永久卡-0L2BR-9E6NT-4Y1WF-8H7QD-5J3ZV
+永久卡-7A9SN-3M1KX-5C6PL-2R0TG-9B4YE
+永久卡-1F8HU-7W3DS-6Q5JO-9K0VA-4Z2NM
+永久卡-9C4RP-1T7LB-8Y0EH-3G5FJ-7D2SK
+永久卡-5V9AQ-2N6MW-7X4CR-0L8PT-1B3YF
+永久卡-3H0GD-6J5KS-9U8VZ-1A2NE-7C4ML
+永久卡-0R6TG-9Y3BO-4P7HN-6F2DV-8K1JA
+永久卡-7S1QM-4W9EC-2Z8RP-9T5LB-3N6YR
+永久卡-9K4MT-1P7LZ-6X2CB-8N0RW-5T3YH
+永久卡-1D8FJ-6S3VM-9G4EK-2U5AP-0O7IC
+永久卡-8L5BR-2E0NT-7Y9WF-3H4QD-6J1ZV
+永久卡-4A1SN-9M8KX-2C7PL-0R5TG-7B6YE
+永久卡-6F3HU-2W9DS-8Q4JO-5K1VA-0Z7NM
+永久卡-0C8RP-9T2LB-5Y1EH-7G4FJ-3D6SK
+永久卡-9V6AQ-4N0MW-1X8CR-6L3PT-2B7YF
+永久卡-7H4GD-0J9KS-8U3VZ-5A6NE-1C2ML
+永久卡-2R1TG-9Y5BO-7P0HN-3F8DV-6K2JA
+永久卡-5S7QM-3W0EC-9Z1RP-8T6LB-4N2YR
+永久卡-0K9MT-7P3LZ-2X1CB-9N5RW-6T4YH
+永久卡-3D2FJ-9S8VM-1G6EK-7U0AP-5O4IC
+永久卡-9L4BR-6E2NT-0Y8WF-3H5QD-1J7ZV
+永久卡-2A9SN-8M3KX-5C1PL-7R0TG-4B6YE
+永久卡-7F5HU-3W8DS-9Q2JO-0K6VA-1Z4NM
+永久卡-6C1RP-9T8LB-4Y2EH-0G7FJ-5D3SK
+永久卡-8V3AQ-5N9MW-1X6CR-2L0PT-9B7YF
+永久卡-1H5GD-7J0KS-3U9VZ-6A2NE-8C4ML
+永久卡-4R8TG-1Y6BO-9P5HN-0F7DV-2K3JA
+永久卡-7S3QM-9W5EC-0Z4RP-6T8LB-1N2YR
+永久卡-9K0MT-2P6LZ-8X5CB-4N1RW-7T3YH
+永久卡-5D7FJ-3S1VM-0G4EK-8U9AP-6O2IC
+永久卡-0L6BR-5E1NT-9Y3WF-7H2QD-4J8ZV
+永久卡-8A4SN-1M9KX-3C6PL-0R7TG-5B2YE
+永久卡-2F0HU-6W3DS-9Q7JO-4K5VA-8Z1NM
+永久卡-9C3RP-2T6LB-5Y0EH-8G4FJ-1D7SK
+永久卡-7V9AQ-1N5MW-4X3CR-9L0PT-6B8YF
+永久卡-0H6GD-8J2KS-5U7VZ-1A4NE-9C3ML
+永久卡-3R0TG-5Y7BO-9P2HN-6F4DV-1K8JA
+永久卡-6S2QM-0W7EC-9Z3RP-5T1LB-8N4YR
+永久卡-1K8MT-9P5LZ-3X0CB-7N2RW-6T9YH
+永久卡-9D4FJ-8S7VM-0G2EK-5U1AP-3O6IC
+永久卡-4L0BR-9E8NT-7Y2WF-1H3QD-5J6ZV
+永久卡-8A3SN-4M7KX-9C0PL-2R6TG-1B5YE
+永久卡-0F9HU-2W4DS-7Q8JO-9K1VA-6Z3NM
+永久卡-7C5RP-3T0LB-6Y9EH-1G2FJ-4D8SK
+永久卡-9V1AQ-6N7MW-5X0CR-3L9PT-2B4YF
+永久卡-5H8GD-2J0KS-9U4VZ-6A3NE-7C1ML
+永久卡-0R7TG-5Y2BO-8P1HN-3F9DV-6K4JA
+永久卡-3S0QM-7W8EC-9Z2RP-1T6LB-5N4YR
+永久卡-6K3MT-9P8LZ-2X4CB-5N0RW-8T7YH
+永久卡-8D9FJ-2S5VM-0G3EK-9U7AP-4O1IC
+永久卡-1L2BR-6E9NT-3Y7WF-5H0QD-7J4ZV
+永久卡-9A8SN-2M5KX-6C3PL-8R0TG-4B7YE
+永久卡-4F1HU-9W6DS-3Q0JO-7K5VA-1Z8NM
+永久卡-7C2RP-9T4LB-1Y8EH-6G3FJ-0D5SK
+永久卡-5V7AQ-3N1MW-8X9CR-0L4PT-6B2YF
+永久卡-9H0GD-7J6KS-2U8VZ-5A1NE-4C3ML
+永久卡-2R4TG-8Y0BO-6P9HN-1F7DV-5K2JA
+永久卡-6S9QM-2W5EC-8Z7RP-0T3LB-4N1YR
+永久卡-0K1MT-9P4LZ-5X7CB-3N8RW-7T2YH
+永久卡-9D6FJ-1S0VM-7G5EK-4U8AP-2O3IC
+永久卡-3L7BR-4E1NT-9Y0WF-6H5QD-8J2ZV
+永久卡-7A0SN-8M6KX-1C9PL-4R3TG-2B7YE
+永久卡-1F5HU-6W2DS-9Q8JO-0K7VA-3Z4NM
+永久卡-8C9RP-5T1LB-2Y6EH-7G0FJ-9D3SK
+永久卡-6V0AQ-1N4MW-9X7CR-5L2PT-8B3YF
+永久卡-0H9GD-3J5KS-7U1VZ-2A6NE-9C4ML
+永久卡-4R2TG-9Y8BO-1P0HN-5F6DV-2K7JA
+永久卡-9S5QM-1W0EC-6Z4RP-8T2LB-3N9YR
+永久卡-7K8MT-3P6LZ-0X1CB-9N4RW-5T2YH
+永久卡-5D0FJ-8S3VM-2G7EK-1U6AP-9O4IC
+永久卡-2L9BR-7E5NT-4Y1WF-0H8QD-6J2ZV
+永久卡-9A3SN-5M1KX-8C7PL-2R4TG-0B6YE
+永久卡-6F8HU-1W5DS-9Q2JO-7K0VA-3Z4NM
+永久卡-8C1RP-4T9LB-6Y5EH-0G2FJ-7D3SK
+永久卡-1V6AQ-9N2MW-5X8CR-4L0PT-6B1YF
+永久卡-0H4GD-7J1KS-9U5VZ-3A8NE-6C2ML
+永久卡-9R3TG-5Y1BO-2P7HN-8F0DV-4K6JA
+永久卡-7S8QM-2W4EC-0Z1RP-9T6LB-3N5YR
+永久卡-4K2MT-6P9LZ-1X3CB-8N5RW-0T7YH
+永久卡-9D5FJ-7S1VM-3G0EK-4U8AP-6O2IC
+永久卡-0L3BR-8E6NT-5Y9WF-2H1QD-7J4ZV
+永久卡-6A7SN-2M4KX-9C0PL-5R8TG-3B1YE
+永久卡-1F0HU-9W6DS-7Q3JO-2K5VA-8Z4NM
+永久卡-3C7RP-6T2LB-9Y1EH-4G8FJ-0D5SK
+永久卡-8V5AQ-1N0MW-7X4CR-6L9PT-2B3YF
+永久卡-5H1GD-9J7KS-3U0VZ-8A4NE-6C2ML
+永久卡-0R9TG-4Y5BO-7P2HN-1F3DV-9K6JA
+永久卡-2S1QM-9W8EC-5Z0RP-3T7LB-6N4YR
+永久卡-9K6MT-1P3LZ-8X0CB-4N9RW-2T5YH
+永久卡-6D8FJ-2S5VM-9G1EK-7U0AP-5O3IC
+永久卡-1L0BR-5E2NT-9Y8WF-3H6QD-7J4ZV
+永久卡-8A9SN-2M7KX-6C1PL-0R5TG-4B3YE
+永久卡-3F4HU-9W0DS-5Q6JO-8K2VA-1Z7NM
+永久卡-7C0RP-4T5LB-9Y3EH-2G8FJ-6D1SK
+永久卡-9V7AQ-2N3MW-6X1CR-0L4PT-8B5YF
+永久卡-4H6GD-1J9KS-7U2VZ-5A0NE-9C3ML
+永久卡-0R2TG-9Y7BO-3P5HN-8F1DV-6K4JA
+永久卡-5S3QM-8W1EC-2Z9RP-7T0LB-4N6YR
+永久卡-8K5MT-9P0LZ-3X6CB-1N7RW-5T2YH
+永久卡-2D1FJ-7S9VM-4G3EK-0U5AP-8O6IC
+永久卡-9L4BR-1E8NT-6Y2WF-7H3QD-5J0ZV
+永久卡-6A5SN-8M0KX-3C2PL-9R7TG-1B4YE
+永久卡-1F9HU-6W4DS-8Q2JO-9K0VA-7Z5NM
+永久卡-0C3RP-7T8LB-9Y5EH-2G4FJ-6D1SK
+永久卡-7V2AQ-9N5MW-3X0CR-8L6PT-4B1YF
+永久卡-3H8GD-5J0KS-9U4VZ-7A2NE-1C6ML
+永久卡-6R4TG-9Y2BO-5P8HN-0F7DV-3K1JA
+永久卡-9S0QM-3W6EC-7Z1RP-2T5LB-8N4YR
+永久卡-0K9MT-8P4LZ-6X3CB-2N1RW-7T5YH
+永久卡-9D2FJ-5S6VM-8G0EK-1U3AP-4O7IC
+永久卡-4L1BR-9E0NT-6Y7WF-8H2QD-5J3ZV
+永久卡-8A6SN-3M9KX-7C0PL-1R4TG-6B2YE
+永久卡-2F1HU-7W9DS-4Q0JO-9K6VA-0Z3NM
+永久卡-1C8RP-9T3LB-5Y0EH-6G7FJ-4D2SK
+永久卡-9V4AQ-8N1MW-2X9CR-7L5PT-0B3YF
+永久卡-5H7GD-0J4KS-8U1VZ-9A6NE-3C2ML
+永久卡-0R5TG-6Y8BO-9P1HN-4F2DV-7K3JA
+永久卡-7S9QM-1W0EC-8Z4RP-5T2LB-6N9YR
+永久卡-8K3MT-0P7LZ-9X5CB-2N4RW-1T6YH
+永久卡-6D9FJ-3S0VM-7G8EK-4U1AP-2O5IC
+永久卡-9L2BR-6E4NT-1Y9WF-7H0QD-3J5ZV
+永久卡-0A7SN-4M2KX-9C1PL-8R6TG-5B0YE
+永久卡-1F3HU-8W7DS-6Q9JO-0K4VA-7Z2NM
+永久卡-3C9RP-5T0LB-8Y6EH-2G7FJ-9D1SK
+永久卡-7V5AQ-1N8MW-4X0CR-9L3PT-6B2YF
+永久卡-9H1GD-6J4KS-2U9VZ-8A0NE-5C7ML
+永久卡-4R0TG-9Y6BO-7P3HN-1F8DV-2K5JA
+永久卡-6S7QM-2W1EC-9Z8RP-4T5LB-0N3YR
+永久卡-0K2MT-9P6LZ-5X4CB-3N1RW-8T7YH
+永久卡-2D4FJ-8S1VM-9G7EK-5U0AP-6O3IC
+永久卡-9L5BR-3E9NT-7Y1WF-0H2QD-4J8ZV
+永久卡-5A0SN-1M6KX-8C9PL-2R3TG-9B7YE
+永久卡-1F8HU-4W2DS-9Q6JO-3K7VA-0Z5NM
+永久卡-6C4RP-9T1LB-2Y0EH-7G3FJ-5D8SK
+永久卡-8V9AQ-3N2MW-6X7CR-1L0PT-4B5YF
+永久卡-0H3GD-8J6KS-5U1VZ-9A4NE-2C7ML
+永久卡-7R1TG-2Y9BO-8P0HN-6F5DV-3K4JA
+永久卡-3S6QM-9W2EC-1Z7RP-0T4LB-8N5YR
+永久卡-9K5MT-1P9LZ-6X2CB-7N0RW-4T8YH
+永久卡-1D7FJ-5S2VM-9G0EK-8U6AP-3O4IC
+永久卡-4L9BR-7E1NT-2Y6WF-5H0QD-9J3ZV
+永久卡-8A2SN-6M5KX-0C8PL-3R1TG-7B4YE
+永久卡-2F0HU-9W3DS-7Q5JO-6K2VA-1Z8NM
+永久卡-9C6RP-4T7LB-8Y2EH-1G0FJ-3D5SK
+永久卡-7V1AQ-5N9MW-0X3CR-6L8PT-2B4YF
+永久卡-0H6GD-2J8KS-7U4VZ-9A1NE-5C3ML
+永久卡-6R5TG-9Y0BO-1P7HN-4F2DV-8K6JA
+永久卡-5S4QM-0W6EC-9Z3RP-7T1LB-2N8YR
+永久卡-8K0MT-3P5LZ-9X6CB-4N2RW-7T1YH
+永久卡-3D1FJ-6S9VM-0G4EK-8U7AP-5O2IC
+永久卡-9L6BR-2E8NT-5Y0WF-1H3QD-7J4ZV
+永久卡-0A4SN-7M1KX-9C6PL-5R2TG-8B3YE
+永久卡-6F2HU-3W0DS-9Q7JO-1K5VA-4Z8NM
+永久卡-2C9RP-8T5LB-6Y1EH-0G4FJ-7D3SK
+永久卡-9V0AQ-4N6MW-7X2CR-8L5PT-1B3YF
+永久卡-5H8GD-9J1KS-3U6VZ-7A0NE-2C4ML
+永久卡-7R3TG-1Y8BO-5P0HN-9F4DV-6K2JA
+永久卡-0S7QM-4W2EC-8Z9RP-1T5LB-3N6YR
+永久卡-6K1MT-9P3LZ-7X8CB-2N5RW-4T0YH
+永久卡-1D9FJ-8S2VM-6G5EK-0U3AP-9O7IC
+永久卡-9L0BR-4E5NT-8Y3WF-7H1QD-2J6ZV
+永久卡-8A7SN-3M0KX-5C9PL-1R4TG-6B2YE
+永久卡-2F5HU-9W7DS-6Q1JO-8K0VA-3Z4NM
+永久卡-0C1RP-7T4LB-9Y6EH-5G2FJ-8D7SK
+永久卡-7V9AQ-2N4MW-5X1CR-9L6PT-3B0YF
+永久卡-9H2GD-8J5KS-1U9VZ-6A3NE-4C7ML
+永久卡-4R6TG-9Y1BO-7P3HN-2F0DV-8K5JA
+永久卡-3S2QM-1W9EC-6Z4RP-9T7LB-0N5YR
+永久卡-9K4MT-6P1LZ-2X7CB-8N3RW-5T9YH
+永久卡-5D8FJ-0S6VM-9G1EK-4U2AP-7O3IC
+永久卡-0L3BR-8E7NT-6Y2WF-9H1QD-4J5ZV
+永久卡-7A1SN-3M6KX-8C0PL-2R9TG-5B4YE
+永久卡-1F6HU-9W2DS-7Q5JO-0K8VA-3Z4NM
+永久卡-8C0RP-5T9LB-2Y7EH-6G1FJ-9D4SK
+永久卡-6V4AQ-9N2MW-0X8CR-3L5PT-7B1YF
+永久卡-0H7GD-4J1KS-8U6VZ-5A9NE-2C3ML
+永久卡-9R5TG-1Y7BO-4P2HN-8F0DV-6K3JA
+永久卡-7S4QM-9W0EC-3Z8RP-2T6LB-5N1YR
+永久卡-0K6MT-8P2LZ-4X9CB-7N1RW-3T5YH
+永久卡-2D3FJ-9S7VM-6G0EK-1U8AP-5O4IC
+永久卡-9L2BR-7E6NT-0Y9WF-4H1QD-8J3ZV
+永久卡-5A0SN-9M4KX-7C2PL-3R8TG-1B6YE
+永久卡-6F9HU-1W0DS-8Q6JO-4K7VA-2Z3NM
+永久卡-3C5RP-9T2LB-7Y0EH-8G4FJ-6D1SK
+永久卡-9V6AQ-1N8MW-4X0CR-7L3PT-5B2YF
+永久卡-0H9GD-6J3KS-8U5VZ-1A7NE-4C2ML
+永久卡-8R1TG-3Y6BO-9P0HN-5F7DV-2K4JA
+永久卡-1S9QM-6W4EC-8Z1RP-9T3LB-7N0YR
+永久卡-9K2MT-4P8LZ-7X6CB-0N1RW-5T3YH
+永久卡-6D0FJ-2S5VM-9G8EK-7U1AP-4O3IC
+永久卡-4L7BR-9E2NT-1Y5WF-6H0QD-8J3ZV
+永久卡-8A1SN-5M9KX-3C7PL-0R4TG-2B6YE
+永久卡-0F6HU-9W1DS-7Q4JO-3K8VA-5Z2NM
+永久卡-9C3RP-6T0LB-4Y8EH-1G5FJ-7D2SK
+永久卡-7V2AQ-9N5MW-3X1CR-6L8PT-0B4YF
+永久卡-2H7GD-5J0KS-9U4VZ-8A1NE-3C6ML
+永久卡-4R9TG-1Y5BO-8P0HN-6F3DV-7K2JA
+永久卡-6S0QM-9W8EC-2Z5RP-0T7LB-1N3YR
+永久卡-8K9MT-3P1LZ-5X0CB-2N6RW-9T4YH
+永久卡-1D4FJ-7S0VM-9G5EK-3U2AP-6O8IC
+永久卡-9L5BR-4E8NT-2Y1WF-7H3QD-0J6ZV
+永久卡-0A2SN-9M6KX-5C0PL-1R7TG-4B3YE
+永久卡-3F8HU-5W2DS-9Q0JO-7K4VA-1Z6NM
+永久卡-5C1RP-8T9LB-0Y4EH-6G2FJ-3D7SK
+永久卡-9V0AQ-3N7MW-6X2CR-8L5PT-1B4YF
+永久卡-0H5GD-7J2KS-9U0VZ-4A6NE-8C1ML
+永久卡-7R4TG-2Y9BO-6P1HN-0F8DV-5K3JA
+永久卡-9S1QM-4W7EC-8Z0RP-2T5LB-6N3YR
+永久卡-0K7MT-9P4LZ-2X1CB-5N8RW-3T6YH
+永久卡-4D6FJ-1S9VM-8G0EK-7U3AP-2O5IC
+永久卡-9L3BR-6E1NT-0Y4WF-8H7QD-5J2ZV
+永久卡-2A8SN-7M0KX-9C5PL-3R4TG-1B6YE
+永久卡-6F1HU-9W4DS-2Q8JO-0K5VA-7Z3NM
+永久卡-9C7RP-4T2LB-8Y0EH-1G6FJ-5D3SK
+永久卡-7V9AQ-1N3MW-6X8CR-0L2PT-4B5YF
+永久卡-3H0GD-8J4KS-7U9VZ-5A2NE-1C6ML
+永久卡-0R6TG-9Y3BO-5P8HN-2F1DV-4K7JA
+永久卡-5S2QM-8W9EC-0Z7RP-3T1LB-6N4YR
+永久卡-8K5MT-9P2LZ-6X0CB-1N7RW-2T9YH
+永久卡-9D8FJ-3S0VM-7G6EK-4U1AP-2O5IC
+永久卡-1L2BR-5E9NT-8Y0WF-3H4QD-6J7ZV
+永久卡-6A4SN-9M7KX-0C2PL-8R1TG-3B5YE
+永久卡-0F3HU-9W6DS-7Q2JO-1K8VA-5Z4NM
+永久卡-2C0RP-7T4LB-9Y5EH-6G1FJ-3D8SK
+永久卡-9V8AQ-1N0MW-4X6CR-5L2PT-7B3YF
+永久卡-6H4GD-9J7KS-2U0VZ-1A5NE-8C3ML
+永久卡-0R1TG-6Y8BO-9P4HN-7F2DV-3K5JA
+永久卡-7S9QM-2W3EC-9Z5RP-8T1LB-4N6YR
+永久卡-5K0MT-8P2LZ-7X6CB-3N9RW-1T4YH
+永久卡-9D3FJ-1S5VM-2G7EK-0U9AP-6O4IC
+永久卡-4L8BR-9E3NT-5Y0WF-1H7QD-8J2ZV
+永久卡-8A0SN-6M9KX-4C2PL-7R5TG-3B1YE
+永久卡-1F5HU-2W0DS-9Q6JO-8K7VA-4Z3NM
+永久卡-3C8RP-9T2LB-1Y6EH-5G0FJ-7D4SK
+永久卡-6V1AQ-9N7MW-0X2CR-4L5PT-8B3YF
+永久卡-9H6GD-3J0KS-7U2VZ-1A8NE-5C4ML
+永久卡-0R3TG-6Y2BO-9P1HN-4F8DV-7K5JA
+永久卡-5S7QM-3W0EC-9Z4RP-1T8LB-2N6YR
+永久卡-7K3MT-9P8LZ-2X6CB-0N4RW-5T1YH
+永久卡-1D5FJ-7S0VM-6G2EK-9U8AP-3O4IC
+永久卡-9L1BR-5E9NT-7Y3WF-0H6QD-8J2ZV
+永久卡-0A8SN-2M4KX-7C9PL-5R6TG-1B3YE
+永久卡-6F7HU-9W1DS-4Q0JO-2K8VA-7Z5NM
+永久卡-8C3RP-5T9LB-2Y0EH-9G6FJ-4D1SK
+永久卡-9V5AQ-7N2MW-3X8CR-6L1PT-0B4YF
+永久卡-1H9GD-4J6KS-8U3VZ-2A7NE-9C5ML
+永久卡-3R0TG-8Y9BO-1P2HN-6F4DV-5K8JA
+永久卡-7S4QM-9W3EC-5Z1RP-2T8LB-0N6YR
+永久卡-6K5MT-0P7LZ-9X2CB-4N1RW-8T3YH
+永久卡-9D0FJ-5S8VM-3G1EK-7U6AP-2O4IC
+永久卡-2L4BR-7E1NT-5Y9WF-8H3QD-0J6ZV
+永久卡-8A7SN-0M5KX-3C1PL-6R9TG-4B2YE
+永久卡-1F9HU-6W4DS-2Q8JO-7K0VA-3Z5NM
+永久卡-5C2RP-9T7LB-1Y4EH-3G0FJ-8D6SK
+永久卡-7V3AQ-2N9MW-6X1CR-0L5PT-4B8YF
+永久卡-0H7GD-5J1KS-9U4VZ-7A2NE-3C8ML
+永久卡-9R6TG-4Y2BO-1P5HN-8F3DV-0K7JA
+永久卡-6S8QM-2W0EC-7Z5RP-9T3LB-1N4YR
+永久卡-0K9MT-4P1LZ-8X7CB-2N5RW-6T3YH
+永久卡-9D4FJ-7S2VM-0G5EK-3U1AP-8O6IC
+永久卡-4L0BR-9E8NT-2Y5WF-7H1QD-3J6ZV
+永久卡-8A3SN-5M1KX-9C7PL-0R4TG-2B8YE
+永久卡-2F6HU-9W3DS-7Q1JO-4K5VA-8Z0NM
+永久卡-9C9RP-3T0LB-6Y4EH-1G7FJ-5D2SK
+永久卡-1V2AQ-9N6MW-4X8CR-2L5PT-7B3YF
+永久卡-3H8GD-6J1KS-9U5VZ-0A3NE-4C7ML
+永久卡-7R2TG-9Y8BO-5P0HN-1F4DV-6K3JA
+永久卡-5S6QM-0W9EC-7Z3RP-2T1LB-8N5YR
+永久卡-8K1MT-6P4LZ-9X2CB-5N0RW-7T8YH
+永久卡-9D5FJ-3S0VM-8G2EK-1U7AP-4O6IC
+永久卡-0L7BR-9E1NT-4Y6WF-8H2QD-5J3ZV
+永久卡-6A0SN-2M9KX-5C4PL-7R1TG-0B8YE
+永久卡-1F7HU-8W2DS-9Q5JO-0K6VA-3Z4NM
+永久卡-9C1RP-5T8LB-3Y0EH-7G2FJ-6D4SK
+永久卡-7V6AQ-1N0MW-5X3CR-9L8PT-2B4YF
+永久卡-0H2GD-9J5KS-6U7VZ-3A1NE-8C4ML
+永久卡-4R9TG-1Y4BO-7P8HN-0F6DV-5K3JA
+永久卡-2S5QM-8W1EC-0Z6RP-9T4LB-3N7YR
+永久卡-9K0MT-7P9LZ-4X1CB-8N2RW-6T5YH
+永久卡-1D6FJ-9S4VM-0G8EK-5U2AP-7O3IC
+永久卡-9L5BR-3E7NT-8Y0WF-6H4QD-1J2ZV
+永久卡-5A9SN-0M3KX-2C6PL-9R8TG-4B1YE
+永久卡-8F1HU-4W9DS-6Q2JO-1K0VA-9Z7NM
+永久卡-2C4RP-7T1LB-9Y6EH-0G3FJ-5D8SK
+永久卡-6V8AQ-9N2MW-1X0CR-7L5PT-3B4YF
+永久卡-0H9GD-4J7KS-9U2VZ-8A6NE-1C5ML
+永久卡-7R1TG-3Y9BO-6P0HN-9F5DV-2K4JA
+永久卡-3S8QM-9W4EC-1Z0RP-7T6LB-5N2YR
+永久卡-0K3MT-5P8LZ-9X4CB-1N7RW-6T2YH
+永久卡-9D7FJ-2S5VM-7G0EK-4U9AP-3O1IC
+永久卡-4L6BR-9E2NT-1Y8WF-3H0QD-7J5ZV
+永久卡-8A1SN-6M7KX-2C9PL-9R4TG-0B5YE
+永久卡-1F2HU-9W8DS-5Q0JO-7K3VA-6Z1NM
+永久卡-5C0RP-8T6LB-4Y2EH-9G7FJ-1D3SK
+永久卡-9V4AQ-3N1MW-7X9CR-6L2PT-8B0YF
+永久卡-6H5GD-1J2KS-9U8VZ-3A0NE-7C4ML
+永久卡-0R7TG-9Y3BO-2P6HN-5F1DV-8K4JA
+永久卡-7S0QM-4W6EC-9Z3RP-8T2LB-1N9YR
+永久卡-8K9MT-2P5LZ-0X3CB-6N1RW-9T7YH
+永久卡-9D2FJ-6S8VM-1G0EK-5U4AP-7O3IC
+永久卡-2L1BR-9E6NT-4Y3WF-0H7QD-8J2ZV
+永久卡-5A4SN-8M0KX-7C3PL-2R6TG-9B1YE
+永久卡-6F9HU-3W7DS-1Q0JO-8K5VA-2Z4NM
+永久卡-9C7RP-4T2LB-6Y8EH-0G1FJ-7D5SK
+永久卡-7V0AQ-9N5MW-2X4CR-5L1PT-3B8YF
+永久卡-0H6GD-3J9KS-8U4VZ-1A7NE-6C5ML
+永久卡-4R2TG-9Y7BO-3P0HN-6F5DV-1K8JA
+永久卡-1S4QM-7W9EC-0Z8RP-5T3LB-9N2YR
+永久卡-9K5MT-6P0LZ-8X2CB-4N7RW-1T3YH
+永久卡-6D1FJ-8S4VM-0G9EK-2U7AP-5O3IC
+永久卡-9L8BR-4E5NT-7Y0WF-1H3QD-6J2ZV
+永久卡-2A6SN-9M1KX-4C7PL-8R0TG-3B5YE
+永久卡-1F8HU-5W2DS-9Q6JO-7K0VA-4Z3NM
+永久卡-8C3RP-2T9LB-6Y0EH-1G5FJ-7D4SK
+永久卡-9V7AQ-5N1MW-3X8CR-0L4PT-6B2YF
+永久卡-3H0GD-9J4KS-2U6VZ-8A5NE-1C7ML
+永久卡-0R8TG-4Y1BO-6P3HN-9F7DV-5K2JA
+永久卡-7S2QM-0W8EC-5Z1RP-3T9LB-6N4YR
+永久卡-8K4MT-9P7LZ-1X3CB-5N2RW-0T8YH
+永久卡-9D6FJ-4S1VM-7G3EK-0U8AP-2O5IC
+永久卡-1L9BR-6E4NT-9Y3WF-8H1QD-7J2ZV
+永久卡-0A3SN-5M8KX-2C7PL-9R4TG-6B1YE
+永久卡-6F5HU-9W0DS-8Q2JO-3K7VA-4Z5NM
+永久卡-2C8RP-7T1LB-9Y4EH-5G0FJ-8D3SK
+永久卡-9V2AQ-6N5MW-1X0CR-7L8PT-3B4YF
+永久卡-7H6GD-3J0KS-9U2VZ-4A8NE-1C5ML
+永久卡-5R1TG-8Y6BO-0P9HN-7F3DV-2K4JA
+永久卡-3S9QM-1W5EC-8Z0RP-4T7LB-2N6YR
+永久卡-0K7MT-4P2LZ-9X8CB-6N1RW-5T3YH
+永久卡-9D3FJ-7S8VM-2G0EK-4U6AP-1O5IC
+永久卡-6L2BR-0E9NT-8Y4WF-5H1QD-3J7ZV
+永久卡-1A5SN-9M0KX-7C6PL-2R8TG-5B3YE
+永久卡-8F4HU-2W6DS-9Q0JO-6K3VA-1Z5NM
+永久卡-3C0RP-9T8LB-7Y1EH-4G5FJ-2D6SK
+永久卡-9V9AQ-4N3MW-8X1CR-5L0PT-7B2YF
+永久卡-0H1GD-6J9KS-3U5VZ-7A4NE-8C2ML
+永久卡-7R8TG-2Y0BO-9P6HN-4F1DV-3K5JA
+永久卡-5S3QM-9W8EC-1Z2RP-7T0LB-6N4YR
+永久卡-8K6MT-1P3LZ-9X5CB-2N8RW-4T0YH
+永久卡-9D5FJ-3S9VM-6G1EK-8U4AP-0O7IC
+永久卡-4L1BR-8E5NT-0Y9WF-6H2QD-7J3ZV
+永久卡-2A8SN-5M4KX-9C1PL-3R6TG-8B0YE
+永久卡-1F0HU-7W4DS-9Q2JO-5K8VA-2Z6NM
+永久卡-9C6RP-1T0LB-3Y8EH-7G5FJ-4D2SK
+永久卡-7V3AQ-8N9MW-2X4CR-1L6PT-5B0YF
+永久卡-6H7GD-9J2KS-4U0VZ-8A5NE-3C1ML
+永久卡-0R5TG-3Y7BO-9P1HN-5F6DV-2K8JA
+永久卡-5S0QM-9W7EC-3Z5RP-1T2LB-8N6YR
+永久卡-6K9MT-2P7LZ-5X3CB-0N4RW-9T1YH
+永久卡-1D0FJ-6S7VM-3G9EK-8U2AP-4O5IC
+永久卡-9L4BR-7E0NT-3Y8WF-5H6QD-2J1ZV
+永久卡-8A9SN-4M2KX-6C0PL-1R7TG-9B3YE
+永久卡-2F7HU-8W5DS-0Q9JO-7K1VA-3Z6NM
+永久卡-9C4RP-6T2LB-1Y7EH-8G0FJ-5D9SK
+永久卡-0V1AQ-9N8MW-3X5CR-6L2PT-4B7YF
+永久卡-7H3GD-2J6KS-8U1VZ-5A9NE-0C4ML
+永久卡-4R1TG-9Y5BO-6P2HN-0F8DV-3K7JA
+永久卡-6S9QM-3W1EC-7Z4RP-9T6LB-0N2YR
+永久卡-9K2MT-5P0LZ-8X7CB-1N3RW-6T4YH
+永久卡-3D8FJ-9S4VM-5G2EK-0U7AP-1O6IC
+永久卡-0L5BR-4E9NT-1Y7WF-8H0QD-6J3ZV
+永久卡-7A2SN-3M6KX-9C8PL-5R1TG-0B4YE
+永久卡-8F9HU-5W7DS-1Q3JO-9K6VA-2Z0NM
+永久卡-1C5RP-8T3LB-6Y9EH-2G4FJ-0D7SK
+永久卡-9V0AQ-7N1MW-4X6CR-3L8PT-5B2YF
+永久卡-5H4GD-0J8KS-3U6VZ-9A2NE-7C1ML
+永久卡-2R9TG-5Y0BO-8P4HN-1F7DV-6K3JA
+永久卡-9S6QM-2W1EC-7Z0RP-4T5LB-8N3YR
+永久卡-6K8MT-0P5LZ-9X2CB-3N7RW-1T4YH
+永久卡-9D1FJ-4S6VM-8G5EK-2U0AP-7O3IC
+永久卡-4L7BR-9E3NT-6Y1WF-2H5QD-8J0ZV
+永久卡-1A0SN-8M5KX-4C7PL-6R3TG-0B2YE
+永久卡-7F2HU-4W6DS-0Q8JO-9K5VA-1Z3NM
+永久卡-8C9RP-2T5LB-7Y0EH-4G6FJ-9D1SK
+永久卡-5V8AQ-0N3MW-7X1CR-2L4PT-9B6YF
+永久卡-9H1GD-5J0KS-2U7VZ-6A4NE-8C3ML
+永久卡-0R4TG-8Y1BO-5P9HN-7F2DV-1K6JA
+永久卡-3S0QM-6W8EC-9Z5RP-2T1LB-7N4YR
+永久卡-7K5MT-1P2LZ-9X8CB-4N6RW-0T3YH
+永久卡-9D7FJ-0S3VM-8G4EK-5U1AP-2O6IC
+永久卡-5L9BR-4E0NT-7Y2WF-9H6QD-1J3ZV
+永久卡-2A1SN-6M9KX-3C5PL-0R8TG-4B7YE
+永久卡-8F7HU-3W0DS-5Q9JO-1K4VA-6Z2NM
+永久卡-9C0RP-7T6LB-1Y3EH-5G8FJ-2D4SK
+永久卡-0V5AQ-9N2MW-6X7CR-3L1PT-8B4YF
+永久卡-6H2GD-1J9KS-7U3VZ-9A5NE-0C8ML
+永久卡-4R6TG-8Y0BO-2P5HN-6F3DV-1K7JA
+永久卡-3S1QM-9W4EC-0Z8RP-5T2LB-7N9YR
+永久卡-9K7MT-4P0LZ-8X1CB-2N5RW-6T3YH
+永久卡-1D5FJ-6S9VM-3G0EK-7U4AP-2O8IC
+永久卡-0L2BR-8E5NT-9Y3WF-4H1QD-6J7ZV
+永久卡-6A7SN-2M0KX-5C8PL-1R3TG-9B4YE
+永久卡-7F1HU-9W6DS-2Q0JO-4K8VA-1Z5NM
+永久卡-9C3RP-5T0LB-8Y7EH-2G1FJ-6D4SK
+永久卡-7V4AQ-2N1MW-9X6CR-5L0PT-8B3YF
+永久卡-3H6GD-8J2KS-0U9VZ-5A7NE-1C4ML
+永久卡-9R0TG-3Y5BO-6P1HN-8F4DV-2K9JA
+永久卡-5S8QM-0W2EC-7Z9RP-3T6LB-4N1YR
+永久卡-8K3MT-6P9LZ-0X5CB-1N7RW-2T4YH
+永久卡-9D0FJ-4S8VM-1G6EK-7U2AP-5O3IC
+永久卡-2L5BR-9E7NT-0Y4WF-8H3QD-6J2ZV
+永久卡-5A3SN-7M1KX-9C4PL-0R6TG-8B2YE
+永久卡-6F0HU-3W9DS-8Q5JO-1K2VA-7Z4NM
+永久卡-9C8RP-4T1LB-7Y0EH-5G9FJ-2D3SK
+永久卡-1V6AQ-9N4MW-2X8CR-7L5PT-0B3YF
+永久卡-8H2GD-3J7KS-5U0VZ-1A4NE-9C6ML
+永久卡-0R9TG-6Y2BO-8P4HN-3F1DV-7K5JA
+永久卡-3S5QM-9W1EC-6Z8RP-2T0LB-8N7YR
+永久卡-7K4MT-2P8LZ-9X1CB-6N0RW-5T3YH
+永久卡-9D6FJ-1S3VM-7G8EK-4U5AP-0O2IC
+永久卡-4L0BR-6E9NT-8Y1WF-3H5QD-7J2ZV
+永久卡-8A2SN-9M7KX-0C6PL-5R1TG-3B4YE
+永久卡-1F5HU-6W9DS-7Q2JO-3K0VA-8Z4NM
+永久卡-9C1RP-5T7LB-0Y2EH-4G8FJ-6D1SK
+永久卡-7V8AQ-1N0MW-9X3CR-2L5PT-4B6YF
+永久卡-0H5GD-4J1KS-8U6VZ-9A3NE-7C2ML
+永久卡-9R3TG-7Y0BO-4P5HN-1F9DV-8K2JA
+永久卡-5S6QM-2W0EC-9Z1RP-7T8LB-3N4YR
+永久卡-8K7MT-3P5LZ-1X0CB-9N2RW-4T6YH
+永久卡-9D4FJ-8S1VM-5G3EK-0U9AP-6O7IC
+永久卡-6L2BR-0E8NT-9Y5WF-7H4QD-3J1ZV
+永久卡-2A9SN-7M3KX-1C5PL-8R0TG-4B6YE
+永久卡-1F4HU-9W2DS-3Q7JO-5K6VA-8Z0NM
+永久卡-9C5RP-4T9LB-2Y1EH-8G0FJ-7D3SK
+永久卡-0V7AQ-9N3MW-6X2CR-4L1PT-8B5YF
+永久卡-7H1GD-2J8KS-9U0VZ-5A6NE-3C4ML
+永久卡-4R8TG-1Y5BO-6P9HN-0F7DV-2K3JA
+永久卡-6S2QM-9W5EC-3Z0RP-8T1LB-7N4YR
+永久卡-9K0MT-4P6LZ-1X9CB-3N5RW-8T2YH
+永久卡-5D9FJ-0S7VM-2G4EK-6U1AP-9O3IC
+永久卡-9L3BR-5E0NT-8Y6WF-2H4QD-7J1ZV
+永久卡-7A8SN-3M9KX-0C2PL-6R5TG-1B4YE
+永久卡-8F2HU-6W7DS-9Q4JO-1K0VA-3Z5NM
+永久卡-3C6RP-9T1LB-8Y3EH-5G7FJ-0D2SK
+永久卡-9V9AQ-1N5MW-7X0CR-3L4PT-6B2YF
+永久卡-2H4GD-9J0KS-6U8VZ-4A1NE-7C3ML
+永久卡-0R7TG-5Y2BO-9P8HN-3F1DV-6K4JA
+永久卡-7S1QM-9W3EC-4Z6RP-0T2LB-5N8YR
+永久卡-8K9MT-1P0LZ-7X2CB-4N6RW-9T5YH
+永久卡-9D5FJ-6S1VM-0G7EK-3U9AP-2O4IC
+永久卡-1L4BR-8E0NT-5Y9WF-7H6QD-3J2ZV
+永久卡-4A6SN-9M2KX-5C1PL-7R8TG-0B3YE
+永久卡-6F7HU-2W5DS-8Q0JO-9K4VA-1Z7NM
+永久卡-9C9RP-5T3LB-0Y7EH-6G2FJ-8D1SK
+永久卡-7V1AQ-4N8MW-2X6CR-9L5PT-3B0YF
+永久卡-0H6GD-8J4KS-1U3VZ-7A9NE-5C2ML
+永久卡-3R9TG-1Y7BO-8P4HN-6F0DV-2K5JA
+永久卡-5S0QM-7W9EC-2Z6RP-4T3LB-0N8YR
+永久卡-6K4MT-9P1LZ-5X0CB-8N7RW-2T3YH
+永久卡-9D2FJ-5S6VM-1G0EK-7U4AP-3O9IC
+永久卡-0L7BR-4E3NT-6Y0WF-9H8QD-1J2ZV
+永久卡-8A9SN-2M5KX-6C0PL-1R4TG-7B3YE
+永久卡-1F0HU-8W5DS-3Q9JO-6K7VA-2Z1NM
+永久卡-9C3RP-6T8LB-4Y0EH-1G9FJ-5D7SK
+永久卡-7V2AQ-3N6MW-0X5CR-8L1PT-4B9YF
+永久卡-5H0GD-9J3KS-7U6VZ-2A4NE-1C8ML
+永久卡-9R4TG-6Y1BO-0P8HN-5F7DV-3K2JA
+永久卡-2S9QM-5W1EC-8Z3RP-0T6LB-7N2YR
+永久卡-0K5MT-7P2LZ-4X8CB-6N1RW-9T3YH
+永久卡-9D7FJ-3S5VM-8G2EK-1U4AP-0O6IC
+永久卡-4L6BR-8E9NT-2Y0WF-6H5QD-1J7ZV
+永久卡-7A3SN-1M6KX-9C4PL-5R0TG-2B8YE
+永久卡-6F1HU-9W7DS-0Q5JO-4K2VA-8Z3NM
+永久卡-5C8RP-2T4LB-7Y9EH-1G0FJ-3D6SK
+永久卡-9V0AQ-6N3MW-1X7CR-4L9PT-8B2YF
+永久卡-0H4GD-7J1KS-3U8VZ-5A0NE-2C9ML
+永久卡-8R6TG-4Y9BO-1P3HN-7F0DV-5K2JA
+永久卡-3S7QM-9W2EC-0Z8RP-5T4LB-1N3YR
+永久卡-6K0MT-3P9LZ-7X4CB-2N6RW-8T5YH
+永久卡-1D4FJ-6S2VM-9G0EK-8U5AP-3O7IC
+永久卡-9L8BR-2E6NT-5Y3WF-0H1QD-7J4ZV
+永久卡-5A1SN-8M7KX-3C2PL-6R9TG-1B4YE
+永久卡-0F9HU-7W4DS-2Q1JO-5K6VA-9Z3NM
+永久卡-9C2RP-5T6LB-1Y0EH-7G8FJ-3D4SK
+永久卡-7V5AQ-2N9MW-8X1CR-0L3PT-6B4YF
+永久卡-3H7GD-6J0KS-2U5VZ-9A8NE-4C1ML
+永久卡-4R0TG-7Y2BO-5P9HN-1F6DV-8K3JA
+永久卡-9S4QM-3W7EC-0Z2RP-6T9LB-5N1YR
+永久卡-8K6MT-9P4LZ-1X0CB-5N2RW-7T3YH
+永久卡-6D8FJ-1S0VM-9G7EK-4U3AP-2O5IC
+永久卡-9L1BR-5E4NT-8Y2WF-7H9QD-0J6ZV
+永久卡-2A7SN-4M1KX-9C6PL-5R0TG-8B3YE
+永久卡-7F0HU-5W9DS-3Q4JO-6K2VA-1Z8NM
+永久卡-0C6RP-9T1LB-7Y5EH-2G4FJ-8D3SK
+永久卡-9V3AQ-5N8MW-1X0CR-4L6PT-2B9YF
+永久卡-6H2GD-0J7KS-9U1VZ-5A3NE-7C4ML
+永久卡-4R9TG-8Y1BO-7P6HN-2F0DV-3K5JA
+永久卡-2S3QM-9W0EC-6Z7RP-4T1LB-8N5YR
+永久卡-0K8MT-5P1LZ-9X4CB-7N3RW-2T6YH
+永久卡-9D2FJ-8S6VM-4G0EK-1U9AP-5O7IC
+永久卡-1L4BR-9E2NT-6Y8WF-0H7QD-3J5ZV
+永久卡-5A9SN-2M0KX-8C6PL-4R1TG-7B3YE
+永久卡-6F5HU-9W1DS-2Q7JO-0K4VA-8Z3NM
+永久卡-8C0RP-3T5LB-9Y2EH-1G7FJ-6D4SK
+永久卡-0V2AQ-9N7MW-4X1CR-6L3PT-8B5YF
+永久卡-7H5GD-2J9KS-5U1VZ-0A6NE-4C3ML
+永久卡-3R6TG-9Y1BO-7P2HN-5F8DV-1K4JA
+永久卡-6S8QM-0W5EC-9Z4RP-7T2LB-3N1YR
+永久卡-9K1MT-4P7LZ-8X6CB-2N0RW-5T9YH
+永久卡-5D6FJ-2S9VM-7G1EK-0U4AP-8O3IC
+永久卡-9L3BR-7E5NT-1Y9WF-4H2QD-6J8ZV
+永久卡-0A8SN-3M1KX-5C4PL-7R9TG-2B6YE
+永久卡-8F2HU-6W0DS-9Q5JO-1K4VA-3Z7NM
+永久卡-2C5RP-8T9LB-4Y1EH-0G7FJ-6D2SK
+永久卡-9V8AQ-4N2MW-7X5CR-3L1PT-0B6YF
+永久卡-1H7GD-9J3KS-6U0VZ-8A4NE-2C5ML
+永久卡-7R0TG-5Y8BO-2P1HN-9F6DV-3K4JA
+永久卡-5S1QM-9W7EC-3Z4RP-0T8LB-6N2YR
+永久卡-0K6MT-8P3LZ-4X9CB-2N7RW-5T1YH
+永久卡-9D8FJ-5S1VM-2G3EK-7U0AP-4O6IC
+永久卡-3L0BR-9E6NT-8Y1WF-6H4QD-0J7ZV
+永久卡-8A5SN-4M2KX-0C9PL-6R3TG-5B7YE
+永久卡-1F9HU-8W3DS-7Q0JO-4K6VA-2Z5NM
+永久卡-9C7RP-5T1LB-2Y8EH-7G0FJ-1D4SK
+永久卡-7V0AQ-3N6MW-9X2CR-1L8PT-5B4YF
+永久卡-0H3GD-9J5KS-4U7VZ-6A2NE-8C1ML
+永久卡-6R8TG-2Y1BO-9P5HN-7F0DV-4K3JA
+永久卡-1S9QM-7W2EC-4Z5RP-3T0LB-9N8YR
+永久卡-8K5MT-2P9LZ-5X0CB-7N4RW-1T6YH
+永久卡-6D1FJ-9S7VM-0G4EK-2U8AP-3O5IC
+永久卡-4L9BR-6E1NT-9Y2WF-8H5QD-0J3ZV
+永久卡-7A0SN-3M5KX-8C2PL-1R4TG-9B6YE
+永久卡-0F4HU-9W1DS-6Q3JO-5K7VA-2Z8NM
+永久卡-9C2RP-7T6LB-4Y0EH-8G3FJ-5D9SK
+永久卡-2V5AQ-9N1MW-6X4CR-0L7PT-3B2YF
+永久卡-5H8GD-0J4KS-9U2VZ-7A1NE-6C5ML
+永久卡-8R3TG-2Y9BO-7P0HN-4F5DV-1K6JA
+永久卡-9S6QM-5W1EC-0Z7RP-3T4LB-7N2YR
+永久卡-0K2MT-9P6LZ-5X1CB-8N3RW-2T7YH
+永久卡-9D4FJ-2S8VM-7G0EK-1U6AP-5O3IC
+永久卡-6L5BR-4E9NT-8Y2WF-0H3QD-7J1ZV
+永久卡-3A1SN-8M6KX-2C0PL-9R5TG-4B7YE
+永久卡-1F7HU-6W9DS-3Q1JO-8K0VA-5Z4NM
+永久卡-7C8RP-9T2LB-5Y1EH-4G6FJ-0D3SK
+永久卡-9V4AQ-3N7MW-8X0CR-6L2PT-1B5YF
+永久卡-5H9GD-7J1KS-4U8VZ-9A3NE-0C6ML
+永久卡-2R5TG-9Y0BO-6P7HN-8F3DV-4K1JA
+永久卡-9S3QM-1W8EC-5Z6RP-0T2LB-7N4YR
+永久卡-8K0MT-6P5LZ-9X3CB-4N1RW-2T8YH
+永久卡-9D7FJ-5S0VM-1G6EK-8U3AP-7O2IC
+永久卡-1L8BR-3E5NT-7Y0WF-9H6QD-2J4ZV
+永久卡-4A2SN-9M7KX-6C5PL-1R0TG-8B3YE
+永久卡-6F9HU-3W5DS-9Q7JO-2K1VA-0Z8NM
+永久卡-9C0RP-6T4LB-7Y9EH-1G5FJ-3D2SK
+永久卡-7V3AQ-9N8MW-5X1CR-0L6PT-4B7YF
+永久卡-0H5GD-3J2KS-9U7VZ-6A1NE-8C4ML
+永久卡-4R1TG-9Y6BO-7P3HN-0F2DV-6K8JA
+永久卡-6S5QM-9W0EC-3Z8RP-5T7LB-1N2YR
+永久卡-0K4MT-9P8LZ-6X2CB-1N5RW-8T0YH
+永久卡-9D3FJ-1S9VM-7G6EK-5U0AP-3O2IC
+永久卡-9L2BR-7E0NT-6Y4WF-1H8QD-2J5ZV
+永久卡-8A6SN-1M3KX-5C7PL-0R9TG-4B2YE
+永久卡-2F8HU-9W0DS-7Q5JO-6K3VA-1Z4NM
+永久卡-6C5RP-9T8LB-3Y1EH-0G7FJ-5D2SK
+永久卡-9V1AQ-2N4MW-7X9CR-8L0PT-3B6YF
+永久卡-0H6GD-8J3KS-5U1VZ-9A7NE-2C4ML
+永久卡-7R9TG-1Y5BO-8P2HN-6F0DV-3K7JA
+永久卡-1S6QM-9W4EC-8Z0RP-5T1LB-2N7YR
+永久卡-6K8MT-4P2LZ-9X0CB-1N7RW-5T3YH
+永久卡-9D0FJ-6S5VM-2G7EK-8U1AP-4O3IC
+永久卡-5L3BR-0E9NT-2Y8WF-6H4QD-1J7ZV
+永久卡-8A1SN-3M6KX-4C0PL-9R2TG-5B7YE
+永久卡-0F7HU-4W2DS-9Q6JO-1K3VA-8Z5NM
+永久卡-9C9RP-5T3LB-7Y0EH-2G8FJ-4D1SK
+永久卡-7V2AQ-6N8MW-3X5CR-0L1PT-9B4YF
+永久卡-1H4GD-9J7KS-0U3VZ-5A6NE-2C8ML
+永久卡-9R2TG-4Y7BO-5P1HN-0F9DV-8K3JA
+永久卡-5S8QM-2W4EC-6Z9RP-7T1LB-3N0YR
+永久卡-0K7MT-5P2LZ-6X9CB-8N1RW-3T4YH
+永久卡-9D4FJ-0S5VM-7G3EK-1U6AP-2O8IC
+永久卡-6L1BR-7E6NT-4Y0WF-8H2QD-3J5ZV
+永久卡-8A3SN-2M9KX-4C5PL-7R0TG-1B6YE
+永久卡-1F6HU-3W9DS-2Q0JO-8K5VA-7Z4NM
+永久卡-9C2RP-5T0LB-8Y1EH-3G9FJ-6D7SK
+永久卡-7V4AQ-8N2MW-9X6CR-5L0PT-1B3YF
+永久卡-3H7GD-1J4KS-8U0VZ-6A9NE-2C5ML
+永久卡-5R0TG-8Y6BO-4P9HN-3F2DV-7K1JA
+永久卡-1S5QM-4W2EC-9Z7RP-8T3LB-6N0YR
+永久卡-9K4MT-6P9LZ-3X8CB-5N1RW-0T2YH
+永久卡-6D7FJ-8S5VM-9G4EK-5U1AP-7O3IC
+永久卡-2L0BR-6E9NT-1Y4WF-3H2QD-9J5ZV
+永久卡-7A8SN-1M6KX-4C9PL-8R2TG-0B5YE
+永久卡-6F4HU-9W3DS-8Q7JO-4K0VA-1Z6NM
+永久卡-9C5RP-8T3LB-4Y6EH-7G1FJ-5D7SK
+永久卡-2V9AQ-3N4MW-9X1CR-4L0PT-7B6YF
+永久卡-0H6GD-6J5KS-1U4VZ-9A7NE-2C9ML
+永久卡-6R4TG-3Y1BO-9P7HN-4F5DV-7K8JA
+永久卡-5S0QM-2W5EC-0Z7RP-8T1LB-1N6YR
+永久卡-0K3MT-9P7LZ-5X0CB-2N8RW-6T4YH
+永久卡-7D2FJ-1S5VM-3G0EK-9U6AP-7O8IC
+永久卡-9L6BR-2E4NT-8Y9WF-1H6QD-7J3ZV
+永久卡-3A9SN-8M2KX-4C5PL-7R3TG-0B2YE
+永久卡-6F1HU-8W9DS-4Q3JO-2K7VA-9Z5NM
+永久卡-9C6RP-2T3LB-6Y1EH-4G5FJ-7D0SK
+永久卡-0V4AQ-6N1MW-8X5CR-3L0PT-4B2YF
+永久卡-8H1GD-6J9KS-5U3VZ-0A4NE-7C2ML
+永久卡-1R3TG-9Y4BO-5P2HN-7F0DV-8K3JA
+永久卡-7S2QM-5W1EC-8Z3RP-0T4LB-9N6YR
+永久卡-0K4MT-7P2LZ-4X1CB-3N9RW-5T7YH
+永久卡-4D9FJ-8S1VM-2G0EK-6U3AP-5O2IC
+永久卡-6L0BR-4E3NT-9Y8WF-5H0QD-7J6ZV
+永久卡-1A5SN-7M1KX-3C9PL-8R0TG-2B4YE
+永久卡-9F7HU-8W3DS-6Q0JO-3K4VA-2Z5NM
+永久卡-7C1RP-9T2LB-8Y5EH-3G6FJ-7D1SK
+永久卡-2V4AQ-9N7MW-2X0CR-6L2PT-4B1YF
+永久卡-0H5GD-3J1KS-9U0VZ-7A5NE-1C6ML
+永久卡-9R7TG-6Y5BO-8P3HN-2F0DV-5K1JA
+永久卡-4S2QM-7W8EC-1Z0RP-5T7LB-2N7YR
+永久卡-8K3MT-5P0LZ-8X1CB-6N4RW-2T9YH
+永久卡-6D1FJ-4S2VM-9G3EK-7U1AP-2O6IC
+永久卡-5L5BR-7E0NT-7Y3WF-3H8QD-6J3ZV
+永久卡-3A4SN-6M7KX-8C0PL-2R2TG-8B3YE
+永久卡-1F5HU-6W2DS-9Q4JO-5K8VA-1Z2NM
+永久卡-9C3RP-9T7LB-8Y5EH-1G2FJ-9D4SK
+永久卡-7V6AQ-7N0MW-0X3CR-4L2PT-8B1YF
+永久卡-1H7GD-9J1KS-8U3VZ-5A1NE-3C4ML
+永久卡-6R6TG-4Y8BO-8P5HN-5F1DV-0K8JA
+永久卡-9S0QM-8W2EC-9Z2RP-1T2LB-8N5YR
+永久卡-6K8MT-8P2LZ-4X3CB-3N1RW-9T3YH
+永久卡-1D8FJ-1S0VM-6G4EK-2U1AP-0O8IC
+永久卡-7L1BR-2E7NT-6Y4WF-2H8QD-8J1ZV
+永久卡-5A1SN-4M4KX-4C2PL-0R7TG-6B7YE
+永久卡-8F3HU-7W4DS-6Q7JO-5K0VA-7Z2NM
+永久卡-9C2RP-7T3LB-9Y4EH-0G1FJ-0D6SK
+永久卡-1V1AQ-8N5MW-3X1CR-2L1PT-1B6YF
+永久卡-0H8GD-5J0KS-1U3VZ-1A8NE-6C8ML
+永久卡-7R2TG-9Y0BO-4P9HN-0F4DV-3K7JA
+永久卡-6S5QM-0W7EC-0Z4RP-0T4LB-8N3YR
+永久卡-3K1MT-4P2LZ-5X0CB-7N8RW-9T1YH
+永久卡-2D5FJ-9S9VM-4G3EK-1U3AP-8O3IC
+永久卡-2L5BR-6E6NT-3Y7WF-0H3QD-3J4ZV
+永久卡-6A2SN-1M6KX-8C8PL-1R1TG-1B4YE
+永久卡-7F9HU-4W3DS-9Q0JO-8K7VA-5Z8NM
+永久卡-4C1RP-9T5LB-5Y8EH-1G7FJ-1D4SK
+永久卡-3V3AQ-9N7MW-5X4CR-2L7PT-6B6YF
+永久卡-4H9GD-1J7KS-6U9VZ-0A9NE-4C4ML
+永久卡-8R4TG-1Y8BO-2P8HN-8F6DV-3K7JA
+永久卡-9S1QM-6W6EC-7Z6RP-4T3LB-4N1YR
+永久卡-1K2MT-7P5LZ-9X3CB-5N7RW-5T7YH
+永久卡-6D4FJ-6S3VM-2G3EK-1U9AP-8O2IC
+永久卡-0L5BR-2E3NT-9Y9WF-2H1QD-9J6ZV
+永久卡-2A1SN-6M7KX-7C9PL-3R0TG-8B4YE
+永久卡-2F8HU-3W4DS-9Q4JO-1K8VA-0Z8NM
+永久卡-7C4RP-1T0LB-0Y7EH-1G9FJ-8D1SK
+永久卡-0V5AQ-6N5MW-5X1CR-8L4PT-3B8YF
+永久卡-8H4GD-4J7KS-4U8VZ-6A3NE-0C1ML
+永久卡-8R3TG-6Y4BO-5P7HN-7F1DV-5K2JA
+永久卡-6S7QM-4W5EC-1Z9RP-4T4LB-6N7YR
+永久卡-2K2MT-3P7LZ-1X3CB-2N1RW-0T7YH
+永久卡-0D9FJ-0S4VM-4G4EK-2U4AP-9O5IC
+永久卡-5L0BR-1E9NT-8Y7WF-5H9QD-7J8ZV
+永久卡-6A9SN-5M0KX-4C9PL-6R3TG-4B8YE
+永久卡-6F6HU-9W6DS-8Q7JO-3K3VA-2Z5NM
+永久卡-4C5RP-7T6LB-2Y4EH-2G1FJ-3D7SK
+永久卡-1V0AQ-2N9MW-0X8CR-5L3PT-1B8YF
+永久卡-8H4GD-4J8KS-1U5VZ-8A2NE-4C2ML
+永久卡-3R1TG-9Y3BO-6P5HN-0F7DV-6K4JA
+永久卡-6S4QM-3W3EC-2Z1RP-3T0LB-1N9YR
+永久卡-4K6MT-1P3LZ-7X9CB-7N2RW-9T5YH
+永久卡-9D2FJ-9S3VM-5G2EK-8U9AP-4O8IC
+永久卡-3L7BR-8E1NT-8Y6WF-8H8QD-6J6ZV
+永久卡-4A9SN-1M5KX-0C2PL-0R9TG-7B9YE
+永久卡-2F3HU-6W2DS-5Q6JO-3K0VA-2Z3NM
+永久卡-3C2RP-3T5LB-1Y9EH-9G0FJ-2D1SK
+永久卡-8V6AQ-9N8MW-6X7CR-1L8PT-0B4YF
+永久卡-4H1GD-9J1KS-0U1VZ-1A2NE-8C2ML
+永久卡-7R9TG-2Y8BO-2P2HN-3F2DV-4K7JA
+永久卡-5S3QM-2W2EC-0Z8RP-4T5LB-4N4YR
+永久卡-2K1MT-3P8LZ-5X9CB-8N4RW-6T9YH
+永久卡-7D7FJ-2S8VM-2G4EK-4U4AP-6O5IC
+永久卡-0L3BR-6E1NT-0Y4WF-9H1QD-1J6ZV
+永久卡-8A8SN-7M3KX-7C7PL-3R2TG-5B9YE
+永久卡-7F6HU-1W8DS-9Q0JO-2K9VA-2Z2NM
+永久卡-6C7RP-6T5LB-9Y5EH-1G0FJ-4D6SK
+永久卡-8V9AQ-2N3MW-7X2CR-5L8PT-9B7YF
+永久卡-8H6GD-2J0KS-6U5VZ-2A3NE-4C8ML
+永久卡-4R5TG-4Y8BO-3P3HN-4F6DV-0K9JA
+永久卡-9S5QM-6W9EC-3Z5RP-8T5LB-7N4YR
+永久卡-9K0MT-0P6LZ-8X6CB-4N3RW-4T5YH
+永久卡-4D3FJ-2S7VM-4G7EK-0U2AP-0O9IC
+永久卡-6L4BR-4E0NT-0Y5WF-8H2QD-3J5ZV
+永久卡-7A4SN-6M7KX-2C4PL-0R6TG-5B4YE
+永久卡-7F4HU-9W8DS-4Q0JO-9K7VA-5Z0NM
+永久卡-5C8RP-1T0LB-3Y3EH-4G0FJ-9D1SK
+永久卡-7V7AQ-0N5MW-7X0CR-5L5PT-0B8YF
+永久卡-8H3GD-7J3KS-5U3VZ-4A2NE-5C3ML
+永久卡-4R1TG-3Y4BO-5P5HN-6F0DV-2K6JA
+永久卡-4S3QM-8W0EC-6Z5RP-3T3LB-4N3YR
+永久卡-9K3MT-4P9LZ-3X9CB-9N2RW-8T9YH
+永久卡-4D8FJ-8S4VM-1G9EK-0U8AP-2O5IC
+永久卡-9L0BR-0E2NT-5Y5WF-8H8QD-9J0ZV
+永久卡-2A3SN-0M7KX-4C4PL-8R4TG-6B3YE
+永久卡-7F5HU-2W3DS-8Q4JO-5K4VA-1Z7NM
+永久卡-4C3RP-4T3LB-8Y7EH-8G5FJ-9D7SK
+永久卡-7V2AQ-5N4MW-6X3CR-4L9PT-4B6YF
+永久卡-3H4GD-7J8KS-8U0VZ-3A9NE-9C5ML
+永久卡-2R5TG-6Y3BO-3P4HN-8F1DV-9K4JA
+永久卡-5S4QM-8W8EC-4Z5RP-8T4LB-8N7YR
+永久卡-9K7MT-5P8LZ-1X4CB-6N3RW-0T5YH
+永久卡-3D3FJ-1S3VM-6G5EK-0U7AP-5O0IC
+永久卡-1L6BR-5E7NT-3Y0WF-6H2QD-3J1ZV
+永久卡-7A1SN-7M2KX-9C8PL-6R9TG-6B2YE
+永久卡-4F0HU-6W4DS-9Q0JO-3K9VA-8Z6NM
+永久卡-2C4RP-8T7LB-6Y2EH-8G3FJ-2D6SK
+永久卡-9V9AQ-7N8MW-7X3CR-5L3PT-2B8YF
+永久卡-3H3GD-8J1KS-0U7VZ-5A0NE-6C7ML
+永久卡-6R4TG-1Y9BO-3P8HN-1F4DV-1K2JA
+永久卡-5S6QM-1W4EC-8Z4RP-5T7LB-4N5YR
+永久卡-6K9MT-6P3LZ-4X0CB-9N8RW-6T4YH
+永久卡-5D5FJ-5S3VM-4G5EK-5U0AP-4O6IC
+永久卡-2L4BR-5E1NT-6Y7WF-7H9QD-7J3ZV
+永久卡-5A0SN-5M4KX-0C2PL-1R7TG-7B2YE
+永久卡-5F7HU-6W0DS-1Q4JO-2K5VA-3Z5NM
+永久卡-7C7RP-6T2LB-7Y6EH-1G3FJ-9D8SK
+永久卡-4V5AQ-2N9MW-7X7CR-6L3PT-4B7YF
+永久卡-2H8GD-8J2KS-7U8VZ-4A2NE-5C1ML
+永久卡-5R0TG-1Y8BO-1P5HN-5F0DV-4K3JA
+永久卡-3S8QM-4W2EC-5Z3RP-2T3LB-1N6YR
+永久卡-8K5MT-8P6LZ-3X0CB-5N5RW-9T3YH
+永久卡-1D3FJ-6S7VM-1G1EK-4U3AP-3O2IC
+永久卡-8L3BR-3E0NT-0Y6WF-6H7QD-1J3ZV
+永久卡-9A0SN-4M3KX-7C7PL-2R8TG-0B1YE
+永久卡-7F4HU-1W2DS-2Q6JO-6K4VA-2Z5NM
+永久卡-8C5RP-6T7LB-6Y2EH-4G6FJ-1D1SK
+永久卡-6V2AQ-1N3MW-1X3CR-5L2PT-8B3YF
+永久卡-8H2GD-2J2KS-2U6VZ-2A4NE-0C6ML
+永久卡-3R7TG-3Y0BO-0P8HN-1F0DV-9K9JA
+永久卡-1S9QM-7W3EC-4Z2RP-6T6LB-0N7YR
+永久卡-0K2MT-9P1LZ-2X1CB-9N6RW-3T3YH
+永久卡-0D6FJ-9S1VM-6G8EK-1U1AP-5O2IC
+永久卡-0L7BR-1E2NT-2Y8WF-8H6QD-4J1ZV
+永久卡-2A2SN-7M7KX-5C7PL-4R3TG-5B7YE
+永久卡-2F1HU-9W9DS-6Q7JO-6K1VA-3Z4NM
+永久卡-4C1RP-5T8LB-5Y9EH-9G3FJ-3D3SK
+永久卡-4V4AQ-6N0MW-4X2CR-7L4PT-4B2YF
+永久卡-6H2GD-0J0KS-3U9VZ-8A9NE-1C2ML
+永久卡-9R6TG-6Y5BO-9P7HN-2F6DV-8K2JA
+永久卡-8S0QM-9W5EC-2Z8RP-0T7LB-4N7YR
+永久卡-8K4MT-2P5LZ-8X4CB-3N4RW-5T8YH
+永久卡-8D5FJ-7S5VM-8G4EK-7U6AP-1O5IC
+永久卡-4L5BR-6E8NT-4Y4WF-5H4QD-7J1ZV
+永久卡-2A6SN-8M9KX-4C1PL-3R6TG-6B4YE
+永久卡-2F0HU-1W2DS-3Q5JO-6K6VA-8Z4NM
+永久卡-6C4RP-8T7LB-3Y3EH-1G9FJ-3D3SK
+永久卡-2V1AQ-7N0MW-5X8CR-1L5PT-2B5YF
+永久卡-5H6GD-2J8KS-2U0VZ-9A9NE-6C4ML
+永久卡-8R6TG-5Y5BO-5P4HN-5F8DV-1K2JA
+永久卡-3S2QM-5W6EC-4Z0RP-4T2LB-4N8YR
+永久卡-9K1MT-7P0LZ-2X4CB-1N5RW-2T0YH
+永久卡-3D4FJ-1S3VM-4G9EK-7U7AP-4O2IC
+永久卡-5L2BR-1E7NT-6Y8WF-3H7QD-5J3ZV
+永久卡-4A7SN-5M8KX-8C4PL-9R9TG-9B8YE
+永久卡-9F9HU-3W2DS-6Q5JO-1K0VA-1Z9NM
+永久卡-6C6RP-2T5LB-1Y7EH-5G5FJ-2D2SK
+永久卡-3V0AQ-8N7MW-5X5CR-2L3PT-3B7YF
+永久卡-1H4GD-1J5KS-0U6VZ-2A2NE-0C9ML
+永久卡-9R8TG-8Y3BO-2P0HN-6F3DV-3K6JA
+永久卡-2S2QM-8W6EC-1Z6RP-2T1LB-5N9YR
+永久卡-4K6MT-7P5LZ-6X1CB-1N1RW-7T3YH
+永久卡-5D2FJ-2S8VM-1G6EK-9U2AP-4O6IC
+永久卡-6L2BR-0E8NT-6Y5WF-6H9QD-0J0ZV
+永久卡-7A3SN-7M1KX-3C8PL-6R3TG-2B2YE
+永久卡-7F5HU-4W7DS-3Q0JO-4K1VA-5Z6NM
+永久卡-3C1RP-4T4LB-1Y2EH-2G4FJ-7D7SK
+永久卡-7V8AQ-1N6MW-2X4CR-2L7PT-4B3YF
+永久卡-4H7GD-3J0KS-6U8VZ-9A0NE-7C6ML
+永久卡-1R0TG-0Y2BO-8P6HN-3F5DV-2K0JA
+永久卡-8S4QM-9W3EC-0Z9RP-6T8LB-3N6YR
+永久卡-4K3MT-4P4LZ-2X1CB-7N2RW-5T6YH
+永久卡-7D8FJ-8S0VM-9G5EK-2U3AP-3O3IC
+永久卡-6L4BR-2E9NT-1Y2WF-4H8QD-5J4ZV
+永久卡-4A8SN-4M5KX-1C1PL-6R0TG-9B3YE
+永久卡-8F1HU-3W4DS-7Q1JO-1K7VA-6Z1NM
+永久卡-9C3RP-9T6LB-6Y4EH-3G2FJ-9D2SK
+永久卡-5V7AQ-3N0MW-2X2CR-1L6PT-5B0YF
+永久卡-2H9GD-7J6KS-4U9VZ-6A0NE-2C9ML
+永久卡-0R6TG-1Y1BO-8P4HN-2F7DV-9K8JA
+永久卡-4S7QM-7W3EC-1Z0RP-0T2LB-0N5YR
+永久卡-5K1MT-2P2LZ-3X8CB-4N2RW-2T5YH
+永久卡-5D1FJ-8S5VM-6G3EK-5U7AP-2O3IC
+永久卡-7L0BR-4E8NT-5Y6WF-9H7QD-8J1ZV
+永久卡-4A9SN-8M3KX-5C9PL-9R0TG-6B9YE
+永久卡-6F5HU-7W8DS-9Q2JO-7K8VA-1Z4NM
+永久卡-9C1RP-3T4LB-3Y2EH-4G3FJ-3D7SK
+永久卡-2V6AQ-8N2MW-5X2CR-8L5PT-3B8YF
+永久卡-9H8GD-7J7KS-5U5VZ-7A1NE-5C5ML
+永久卡-3R1TG-8Y5BO-4P1HN-3F7DV-0K0JA
+永久卡-6S8QM-3W8EC-6Z3RP-9T7LB-9N2YR
+永久卡-0K5MT-4P2LZ-2X7CB-0N9RW-1T3YH
+永久卡-2D5FJ-0S2VM-5G7EK-7U4AP-8O7IC
+永久卡-8L3BR-4E4NT-1Y0WF-5H2QD-1J9ZV
+永久卡-5A3SN-2M6KX-3C8PL-8R2TG-1B2YE
+永久卡-0F7HU-1W5DS-6Q4JO-3K9VA-2Z4NM
+永久卡-2C0RP-2T5LB-5Y4EH-8G1FJ-0D7SK
+永久卡-7V2AQ-4N0MW-0X7CR-5L3PT-7B6YF
+永久卡-7H7GD-5J1KS-1U8VZ-7A0NE-3C9ML
+永久卡-1R7TG-5Y8BO-2P5HN-0F9DV-5K4JA
+永久卡-8S1QM-1W7EC-5Z0RP-3T3LB-6N8YR
+永久卡-8K9MT-9P6LZ-4X5CB-4N6RW-7T8YH
+永久卡-6D0FJ-5S2VM-5G6EK-6U8AP-1O4IC
+永久卡-0L0BR-6E0NT-5Y2WF-1H0QD-4J8ZV
+永久卡-5A9SN-1M0KX-0C3PL-2R0TG-0B1YE
+永久卡-3F3HU-8W9DS-9Q6JO-9K6VA-1Z5NM
+永久卡-8C6RP-1T8LB-2Y7EH-8G3FJ-8D1SK
+永久卡-5V2AQ-3N3MW-3X2CR-9L6PT-6B6YF
+永久卡-9H8GD-3J1KS-4U0VZ-4A9NE-5C8ML
+永久卡-1R0TG-9Y2BO-7P3HN-9F2DV-4K5JA
+永久卡-3S6QM-4W6EC-2Z8RP-4T6LB-4N0YR
+永久卡-2K0MT-9P5LZ-6X0CB-3N1RW-5T4YH
+永久卡-4D1FJ-7S6VM-9G4EK-3U6AP-0O2IC
+永久卡-8L5BR-2E2NT-4Y7WF-0H2QD-6J0ZV
+永久卡-2A9SN-7M7KX-7C6PL-8R2TG-5B4YE
+永久卡-2F9HU-5W9DS-1Q0JO-1K1VA-4Z6NM
+永久卡-7C1RP-4T1LB-9Y0EH-5G4FJ-8D4SK
+永久卡-9V2AQ-6N7MW-2X3CR-2L1PT-3B2YF
+永久卡-6H5GD-3J2KS-1U9VZ-8A4NE-6C1ML
+永久卡-5R3TG-4Y6BO-2P1HN-5F0DV-0K2JA
+永久卡-4S2QM-5W7EC-4Z9RP-2T5LB-5N4YR
+永久卡-5K2MT-0P9LZ-4X4CB-6N0RW-4T6YH
+永久卡-4D4FJ-6S6VM-3G8EK-5U0AP-0O6IC
+永久卡-0L4BR-4E0NT-3Y9WF-6H3QD-4J1ZV
+永久卡-1A6SN-2M1KX-2C0PL-0R1TG-5B3YE
+永久卡-8F2HU-7W5DS-9Q5JO-0K8VA-8Z2NM
+永久卡-0C2RP-2T7LB-7Y9EH-4G2FJ-8D6SK
+永久卡-7V6AQ-1N6MW-0X0CR-6L7PT-6B1YF
+永久卡-7H0GD-6J3KS-0U8VZ-7A6NE-7C6ML
+永久卡-4R5TG-8Y2BO-3P4HN-9F7DV-0K8JA
+永久卡-4S8QM-9W7EC-0Z5RP-0T0LB-0N2YR
+永久卡-6K4MT-5P3LZ-1X5CB-2N5RW-6T2YH
+永久卡-4D6FJ-7S4VM-4G2EK-8U8AP-3O7IC
+永久卡-0L9BR-4E7NT-1Y4WF-8H5QD-5J8ZV
+永久卡-8A0SN-5M8KX-8C3PL-4R0TG-4B1YE
+永久卡-2F6HU-9W2DS-5Q6JO-9K2VA-6Z1NM
+永久卡-4C4RP-4T3LB-7Y5EH-8G6FJ-9D7SK
+永久卡-2V3AQ-7N8MW-2X4CR-7L1PT-5B0YF
+永久卡-2H8GD-1J1KS-2U6VZ-3A4NE-4C8ML
+永久卡-7R5TG-4Y6BO-8P9HN-8F2DV-8K7JA
+永久卡-3S0QM-1W1EC-4Z2RP-1T6LB-8N0YR
+永久卡-1K5MT-9P4LZ-0X4CB-2N9RW-9T1YH
+永久卡-3D3FJ-1S7VM-1G4EK-1U8AP-5O4IC
+永久卡-2L3BR-8E5NT-9Y9WF-8H0QD-2J3ZV
+永久卡-9A1SN-4M5KX-8C8PL-2R1TG-0B0YE
+永久卡-8F4HU-0W4DS-2Q9JO-0K7VA-0Z4NM
+永久卡-1C4RP-2T2LB-0Y1EH-0G8FJ-3D8SK
+永久卡-8V4AQ-8N3MW-0X0CR-7L0PT-0B1YF
+永久卡-1H2GD-2J3KS-3U6VZ-5A6NE-9C6ML
+永久卡-7R6TG-5Y6BO-0P5HN-8F7DV-9K1JA
+永久卡-6S0QM-0W3EC-6Z1RP-9T1LB-3N7YR
+永久卡-8K8MT-9P0LZ-6X2CB-9N1RW-3T4YH
+永久卡-4D9FJ-4S3VM-7G8EK-4U5AP-4O7IC
+永久卡-7L7BR-3E6NT-8Y4WF-6H8QD-0J1ZV
+永久卡-4A0SN-7M9KX-3C1PL-1R5TG-0B4YE
+永久卡-2F9HU-9W2DS-1Q2JO-3K8VA-4Z2NM
+永久卡-4C3RP-0T2LB-0Y6EH-0G5FJ-8D3SK
+永久卡-0V2AQ-1N1MW-1X3CR-5L5PT-0B5YF
+永久卡-5H5GD-0J4KS-8U3VZ-3A5NE-8C1ML
+永久卡-4R7TG-4Y1BO-8P5HN-3F6DV-6K2JA
+永久卡-2S8QM-0W4EC-1Z6RP-2T9LB-7N1YR
+永久卡-2K2MT-8P5LZ-7X5CB-7N1RW-7T6YH
+永久卡-0D1FJ-9S6VM-0G2EK-9U0AP-6O1IC
+永久卡-6L0BR-8E3NT-0Y3WF-6H9QD-3J3ZV
+永久卡-7A8SN-2M7KX-8C4PL-0R0TG-2B7YE
+永久卡-6F4HU-8W8DS-6Q5JO-2K7VA-2Z0NM
+永久卡-9C4RP-5T5LB-8Y0EH-1G2FJ-4D0SK
+永久卡-5V9AQ-8N6MW-9X9CR-6L2PT-3B9YF
+永久卡-6H0GD-5J7KS-9U6VZ-5A9NE-5C7ML
+永久卡-5R9TG-4Y8BO-3P8HN-6F8DV-1K5JA
+永久卡-7S9QM-6W4EC-5Z2RP-8T8LB-2N8YR
+永久卡-0K3MT-7P1LZ-7X3CB-1N0RW-1T9YH
+永久卡-2D9FJ-5S7VM-6G5EK-9U8AP-9O3IC
+永久卡-5L0BR-2E4NT-6Y1WF-8H7QD-3J3ZV
+永久卡-2A9SN-7M2KX-6C4PL-5R4TG-1B0YE
+永久卡-6F6HU-5W5DS-8Q3JO-4K4VA-7Z6NM
+永久卡-2C8RP-2T4LB-4Y3EH-0G5FJ-1D2SK
+永久卡-7V2AQ-6N2MW-5X0CR-0L1PT-8B5YF
+永久卡-5H4GD-7J0KS-6U9VZ-4A2NE-9C0ML
+永久卡-3R9TG-1Y8BO-1P5HN-2F9DV-4K6JA
+永久卡-4S7QM-3W8EC-8Z0RP-8T5LB-2N9YR
+永久卡-9K6MT-4P6LZ-8X3CB-1N1RW-6T3YH
+永久卡-7D0FJ-4S2VM-8G8EK-1U3AP-0O6IC
+永久卡-0L8BR-4E3NT-7Y3WF-9H4QD-4J8ZV
+永久卡-7A7SN-1M9KX-2C0PL-2R4TG-3B0YE
+永久卡-1F2HU-3W6DS-8Q6JO-8K8VA-6Z5NM
+永久卡-9C4RP-5T6LB-4Y2EH-3G3FJ-1D4SK
+永久卡-7V4AQ-2N4MW-4X6CR-9L4PT-1B0YF
+永久卡-7H5GD-5J6KS-1U8VZ-1A6NE-9C5ML
+永久卡-5R5TG-5Y2BO-1P1HN-9F3DV-5K9JA
+永久卡-2S6QM-2W5EC-0Z9RP-2T3LB-2N6YR
+永久卡-6K3MT-3P7LZ-5X0CB-1N2RW-4T0YH
+永久卡-5D6FJ-2S1VM-5G1EK-4U3AP-7O4IC
+永久卡-7L8BR-6E8NT-9Y4WF-2H3QD-3J4ZV
+永久卡-7A7SN-3M8KX-4C5PL-3R9TG-5B6YE
+永久卡-7F8HU-6W3DS-1Q8JO-6K4VA-5Z2NM
+永久卡-5C7RP-8T1LB-9Y0EH-9G0FJ-7D7SK
+永久卡-8V7AQ-4N3MW-4X1CR-0L7PT-3B3YF
+永久卡-1H6GD-9J8KS-4U9VZ-0A1NE-2C0ML
+永久卡-2R7TG-3Y3BO-2P0HN-7F9DV-5K6JA
+永久卡-5S2QM-2W1EC-6Z9RP-4T8LB-1N1YR
+永久卡-1K7MT-1P4LZ-3X5CB-4N7RW-0T8YH
+永久卡-8D4FJ-3S9VM-5G2EK-1U0AP-6O2IC
+永久卡-2L4BR-3E9NT-3Y6WF-3H9QD-8J2ZV
+永久卡-2A6SN-0M3KX-3C0PL-9R2TG-5B3YE
+永久卡-1F0HU-7W4DS-9Q7JO-3K0VA-1Z2NM
+永久卡-9C3RP-0T8LB-4Y4EH-3G2FJ-1D2SK
+永久卡-1V2AQ-2N1MW-9X8CR-2L3PT-1B4YF
+永久卡-8H4GD-4J9KS-0U5VZ-0A8NE-8C3ML
+永久卡-0R7TG-4Y4BO-0P8HN-4F7DV-7K0JA
+永久卡-4S7QM-2W7EC-7Z9RP-7T4LB-1N9YR
+永久卡-5K1MT-3P8LZ-8X8CB-5N1RW-2T2YH
+永久卡-2D3FJ-2S8VM-0G1EK-9U8AP-3O8IC
+永久卡-0L5BR-3E7NT-4Y2WF-0H5QD-3J5ZV
+永久卡-6A4SN-2M9KX-6C2PL-4R3TG-7B7YE
+永久卡-6F1HU-3W7DS-6Q0JO-5K9VA-0Z8NM
+永久卡-5C3RP-4T0LB-1Y3EH-6G3FJ-1D5SK
+永久卡-5V6AQ-3N4MW-5X5CR-8L0PT-4B8YF
+永久卡-5H8GD-5J4KS-0U0VZ-0A5NE-5C4ML
+永久卡-8R4TG-8Y9BO-8P7HN-6F4DV-7K3JA
+永久卡-8S8QM-4W5EC-1Z7RP-2T5LB-0N2YR
+永久卡-1K9MT-3P0LZ-4X0CB-8N6RW-5T5YH
+永久卡-8D7FJ-4S1VM-7G6EK-6U6AP-2O7IC
+永久卡-5L2BR-1E6NT-5Y2WF-2H6QD-1J0ZV
+永久卡-8A6SN-1M7KX-0C3PL-8R3TG-8B5YE
+永久卡-0F2HU-4W1DS-3Q2JO-3K6VA-7Z3NM
+永久卡-5C1RP-6T9LB-3Y1EH-5G2FJ-9D0SK
+永久卡-7V9AQ-4N0MW-0X6CR-7L9PT-8B5YF
+永久卡-3H2GD-8J9KS-7U1VZ-2A4NE-6C6ML
+永久卡-5R8TG-3Y9BO-0P7HN-3F7DV-6K3JA
+永久卡-5S3QM-4W9EC-1Z0RP-4T5LB-1N5YR
+永久卡-9K4MT-0P6LZ-6X1CB-0N9RW-8T9YH
+永久卡-6D9FJ-7S5VM-0G3EK-5U0AP-6O0IC
+永久卡-2L1BR-2E4NT-5Y4WF-5H7QD-1J7ZV
+永久卡-3A6SN-7M8KX-0C4PL-3R0TG-9B2YE
+永久卡-3F5HU-6W9DS-5Q7JO-7K7VA-8Z2NM
+永久卡-8C2RP-1T5LB-1Y1EH-8G7FJ-2D5SK
+永久卡-1V8AQ-4N1MW-1X4CR-0L3PT-3B9YF
+永久卡-1H5GD-8J7KS-0U3VZ-2A8NE-1C2ML
+永久卡-7R1TG-7Y1BO-9P0HN-3F1DV-6K8JA
+永久卡-4S6QM-9W5EC-5Z3RP-7T7LB-5N7YR
+永久卡-6K3MT-8P5LZ-9X7CB-8N7RW-4T3YH
+永久卡-9D8FJ-2S4VM-8G8EK-8U8AP-4O8IC
+永久卡-1L5BR-8E3NT-1Y5WF-7H8QD-3J3ZV
+永久卡-8A7SN-3M9KX-5C6PL-6R4TG-1B9YE
+永久卡-3F9HU-9W8DS-3Q0JO-8K8VA-7Z3NM
+永久卡-3C5RP-7T7LB-6Y5EH-2G0FJ-0D6SK
+永久卡-7V7AQ-8N2MW-1X0CR-9L7PT-2B0YF
+永久卡-6H1GD-3J2KS-8U7VZ-2A8NE-5C1ML
+永久卡-1R9TG-1Y0BO-2P8HN-2F8DV-3K3JA
+永久卡-1S5QM-7W8EC-3Z5RP-3T4LB-0N7YR
+永久卡-7K9MT-1P0LZ-0X8CB-5N6RW-8T5YH
+永久卡-6D1FJ-8S9VM-1G3EK-7U6AP-2O5IC
+永久卡-4L6BR-9E2NT-6Y7WF-3H3QD-5J0ZV
+永久卡-2A0SN-8M9KX-7C2PL-8R8TG-4B9YE
+永久卡-1F4HU-1W8DS-4Q9JO-1K6VA-3Z7NM
+永久卡-4C8RP-2T0LB-7Y2EH-2G4FJ-5D4SK
+永久卡-6V3AQ-2N7MW-8X7CR-3L6PT-2B6YF
+永久卡-5H3GD-7J1KS-2U8VZ-4A6NE-3C5ML
+永久卡-4R4TG-4Y0BO-0P4HN-8F0DV-2K2JA
+永久卡-3S9QM-3W0EC-1Z0RP-3T6LB-0N1YR
+永久卡-6K2MT-0P2LZ-2X7CB-8N3RW-1T7YH
+永久卡-8D4FJ-6S0VM-2G6EK-7U5AP-0O4IC
+永久卡-0L8BR-1E5NT-7Y3WF-4H2QD-5J6ZV
+永久卡-6A4SN-6M2KX-3C8PL-4R3TG-9B6YE
+永久卡-2F0HU-2W0DS-3Q8JO-4K4VA-9Z4NM
+永久卡-9C9RP-9T2LB-8Y6EH-5G5FJ-3D3SK
+永久卡-9V4AQ-5N3MW-7X0CR-2L4PT-5B9YF
+永久卡-9H5GD-4J0KS-3U9VZ-4A1NE-8C2ML
+永久卡-7R0TG-2Y7BO-5P5HN-6F8DV-8K7JA
+永久卡-3S1QM-0W6EC-5Z0RP-6T7LB-4N5YR
+永久卡-5K4MT-4P3LZ-2X1CB-9N8RW-2T6YH
+永久卡-9D6FJ-9S8VM-6G3EK-6U2AP-3O2IC
+永久卡-0L4BR-0E0NT-5Y5WF-0H2QD-7J2ZV
+永久卡-9A3SN-9M1KX-5C5PL-7R8TG-5B9YE
+永久卡-2F0HU-4W9DS-9Q8JO-1K0VA-7Z5NM
+永久卡-4C6RP-8T3LB-0Y9EH-7G6FJ-6D9SK
+永久卡-2V1AQ-4N8MW-0X6CR-5L8PT-2B4YF
+永久卡-0H7GD-1J2KS-4U6VZ-0A3NE-2C0ML
+永久卡-2R6TG-4Y0BO-6P9HN-6F2DV-5K9JA
+永久卡-2S1QM-0W9EC-9Z7RP-8T0LB-5N8YR
+永久卡-2K0MT-4P7LZ-3X1CB-2N7RW-6T7YH
+永久卡-2D1FJ-3S7VM-7G0EK-4U0AP-6O1IC
+永久卡-0L6BR-7E2NT-0Y5WF-2H4QD-0J9ZV
+永久卡-8A8SN-0M8KX-7C0PL-5R7TG-4B2YE
+永久卡-0F2HU-7W9DS-7Q3JO-5K1VA-1Z6NM
+永久卡-7C3RP-2T6LB-5Y9EH-2G3FJ-7D0SK
+永久卡-7V5AQ-1N5MW-9X2CR-6L9PT-5B9YF
+永久卡-8H0GD-3J6KS-3U5VZ-4A5NE-9C9ML
+永久卡-4R2TG-4Y1BO-4P3HN-6F9DV-9K4JA
+永久卡-8S2QM-6W4EC-7Z3RP-1T2LB-9N6YR
+永久卡-8K5MT-6P4LZ-9X1CB-2N0RW-4T3YH
+永久卡-0D9FJ-2S6VM-3G9EK-5U2AP-8O9IC
+永久卡-7L0BR-4E6NT-3Y0WF-2H6QD-2J4ZV
+永久卡-7A0SN-8M5KX-2C7PL-5R7TG-5B7YE
+永久卡-7F2HU-8W9DS-8Q3JO-9K4VA-2Z1NM
+永久卡-2C0RP-2T7LB-6Y3EH-4G2FJ-7D7SK
+永久卡-6V9AQ-5N3MW-4X5CR-6L5PT-6B3YF
+永久卡-4H1GD-2J9KS-0U4VZ-9A6NE-9C9ML
+永久卡-3R6TG-0Y8BO-4P8HN-0F5DV-7K1JA
+永久卡-8S3QM-0W3EC-8Z2RP-4T6LB-3N9YR
+永久卡-1K6MT-9P8LZ-2X9CB-9N1RW-4T2YH
+永久卡-3D2FJ-4S1VM-5G0EK-3U1AP-6O6IC
+永久卡-8L1BR-3E5NT-3Y9WF-4H8QD-8J8ZV
+永久卡-6A4SN-9M8KX-4C8PL-2R1TG-4B2YE
+永久卡-5F0HU-6W0DS-1Q0JO-8K8VA-2Z6NM
+永久卡-3C7RP-1T5LB-8Y0EH-6G8FJ-7D3SK
+永久卡-1V4AQ-8N7MW-7X0CR-9L7PT-7B2YF
+永久卡-3H8GD-2J2KS-5U4VZ-1A1NE-5C2ML
+永久卡-4R9TG-7Y3BO-8P7HN-9F3DV-1K0JA
+永久卡-1S0QM-0W2EC-5Z7RP-3T5LB-8N8YR
+永久卡-7K8MT-2P1LZ-4X4CB-6N3RW-1T1YH
+永久卡-7D0FJ-5S4VM-7G4EK-5U6AP-5O5IC
+永久卡-5L9BR-6E7NT-0Y5WF-1H9QD-5J4ZV
+永久卡-5A1SN-9M8KX-5C5PL-3R3TG-4B8YE
+永久卡-3F0HU-8W4DS-2Q3JO-6K2VA-7Z4NM
+永久卡-6C1RP-5T8LB-2Y1EH-4G2FJ-2D7SK
+永久卡-6V1AQ-6N1MW-0X2CR-9L3PT-2B2YF
+永久卡-1H2GD-2J0KS-6U6VZ-7A5NE-5C2ML
+永久卡-6R0TG-2Y2BO-2P4HN-6F6DV-6K7JA
+永久卡-5S9QM-6W7EC-3Z5RP-1T3LB-0N8YR
+永久卡-8K2MT-3P0LZ-3X7CB-3N5RW-7T6YH
+永久卡-7D6FJ-7S0VM-4G0EK-5U6AP-1O0IC
+永久卡-5L6BR-5E3NT-8Y5WF-2H7QD-3J6ZV
+永久卡-6A9SN-0M7KX-8C6PL-6R5TG-7B0YE
+永久卡-3F5HU-6W6DS-6Q7JO-3K1VA-1Z4NM
+永久卡-1C6RP-5T6LB-0Y0EH-5G0FJ-7D5SK
+永久卡-4V5AQ-8N1MW-6X0CR-0L6PT-6B9YF
+永久卡-4H2GD-0J6KS-2U6VZ-6A3NE-3C2ML
+永久卡-8R7TG-2Y7BO-7P7HN-8F8DV-7K9JA
+永久卡-5S6QM-7W3EC-3Z4RP-4T2LB-8N0YR
+永久卡-5K2MT-6P1LZ-3X6CB-7N5RW-5T8YH
+永久卡-7D9FJ-8S3VM-8G3EK-3U9AP-6O1IC
+永久卡-3L1BR-4E6NT-8Y6WF-9H8QD-6J4ZV
+永久卡-4A1SN-9M8KX-6C1PL-7R7TG-8B9YE
+永久卡-1F8HU-9W8DS-6Q2JO-8K9VA-3Z3NM
+永久卡-9C8RP-5T7LB-5Y0EH-8G6FJ-3D8SK
+永久卡-8V6AQ-4N9MW-4X3CR-0L3PT-6B4YF
+永久卡-1H8GD-9J9KS-9U3VZ-8A3NE-7C1ML
+永久卡-2R0TG-5Y5BO-0P1HN-1F1DV-6K7JA
+永久卡-8S3QM-3W9EC-7Z9RP-1T1LB-7N5YR
+永久卡-1K4MT-5P5LZ-8X9CB-2N2RW-5T9YH
+永久卡-1D6FJ-2S8VM-5G4EK-3U9AP-5O2IC
+永久卡-7L8BR-2E9NT-3Y2WF-4H6QD-9J5ZV
+永久卡-8A4SN-1M6KX-5C5PL-8R4TG-9B7YE
+永久卡-4F9HU-2W0DS-8Q8JO-5K0VA-1Z1NM
+永久卡-5C8RP-6T4LB-4Y0EH-0G3FJ-6D7SK
+永久卡-1V8AQ-7N7MW-1X2CR-4L4PT-7B8YF
+永久卡-4H5GD-4J7KS-0U4VZ-8A8NE-6C2ML
+永久卡-9R2TG-2Y2BO-8P5HN-6F6DV-7K1JA
+永久卡-8S8QM-4W6EC-9Z3RP-7T2LB-6N7YR
+永久卡-5K8MT-2P7LZ-7X4CB-5N6RW-2T9YH
+永久卡-8D3FJ-6S8VM-7G6EK-6U4AP-9O4IC
+永久卡-3L8BR-8E7NT-5Y0WF-7H6QD-3J0ZV
+永久卡-7A6SN-1M4KX-0C6PL-6R6TG-0B5YE
+永久卡-9F8HU-7W1DS-7Q3JO-0K3VA-7Z1NM
+永久卡-2C3RP-4T2LB-6Y1EH-2G9FJ-9D4SK
+永久卡-8V5AQ-6N8MW-9X9CR-1L9PT-6B7YF
+永久卡-2H6GD-5J2KS-7U6VZ-4A8NE-5C1ML
+永久卡-7R7TG-0Y1BO-5P6HN-9F4DV-1K2JA
+永久卡-2S7QM-3W8EC-3Z5RP-7T7LB-5N1YR
+永久卡-4K7MT-1P8LZ-2X6CB-0N1RW-4T8YH
+永久卡-4D6FJ-0S8VM-8G3EK-1U7AP-7O8IC
+永久卡-2L1BR-4E4NT-1Y6WF-0H2QD-8J3ZV
+永久卡-4A8SN-9M0KX-6C1PL-1R6TG-2B2YE
+永久卡-5F2HU-1W9DS-8Q4JO-9K3VA-7Z2NM
+永久卡-3C3RP-6T9LB-5Y2EH-9G7FJ-2D1SK
+永久卡-9V7AQ-2N6MW-8X0CR-6L4PT-8B2YF
+永久卡-3H6GD-5J1KS-1U5VZ-4A6NE-3C1ML
+永久卡-3R3TG-2Y5BO-6P3HN-3F4DV-4K2JA
+永久卡-4S1QM-3W3EC-7Z6RP-0T6LB-6N3YR
+永久卡-8K9MT-0P4LZ-4X1CB-3N7RW-3T9YH
+永久卡-3D8FJ-8S8VM-5G4EK-3U2AP-8O7IC
+永久卡-5L7BR-0E2NT-8Y8WF-1H3QD-9J0ZV
+永久卡-9A6SN-7M8KX-9C6PL-7R2TG-4B4YE
+永久卡-7F2HU-8W8DS-6Q4JO-3K5VA-8Z6NM
+永久卡-3C0RP-2T4LB-1Y8EH-6G2FJ-6D0SK
+永久卡-1V3AQ-3N8MW-3X3CR-9L8PT-8B4YF
+永久卡-9H9GD-1J5KS-2U8VZ-3A8NE-1C5ML
+永久卡-1R1TG-7Y2BO-4P4HN-9F5DV-9K1JA
+永久卡-9S7QM-2W8EC-1Z8RP-3T8LB-8N8YR
+永久卡-6K3MT-3P5LZ-3X6CB-9N5RW-4T8YH
+永久卡-9D4FJ-4S0VM-8G7EK-6U4AP-8O8IC
+永久卡-0L3BR-7E3NT-4Y3WF-2H7QD-9J6ZV
+永久卡-2A4SN-9M4KX-6C3PL-2R8TG-4B9YE
+永久卡-8F3HU-0W3DS-2Q6JO-6K5VA-7Z0NM
+永久卡-5C4RP-7T0LB-5Y0EH-8G0FJ-9D8SK
+永久卡-4V6AQ-6N7MW-0X2CR-3L0PT-2B1YF
+永久卡-6H9GD-4J7KS-2U2VZ-0A5NE-0C3ML
+永久卡-5R4TG-5Y0BO-7P3HN-5F2DV-3K8JA
+永久卡-6S5QM-0W9EC-8Z6RP-6T5LB-7N1YR
+永久卡-9K5MT-7P3LZ-5X5CB-2N6RW-7T2YH
+永久卡-1D0FJ-9S2VM-9G8EK-9U8AP-7O4IC
+永久卡-4L1BR-9E8NT-0Y2WF-4H1QD-1J8ZV
+永久卡-3A9SN-6M4KX-7C1PL-4R3TG-8B4YE
+永久卡-2F9HU-7W4DS-7Q5JO-2K8VA-0Z9NM
+永久卡-5C6RP-2T1LB-6Y1EH-0G1FJ-3D9SK
+永久卡-4V2AQ-7N9MW-0X7CR-9L2PT-5B0YF
+永久卡-5H4GD-3J9KS-9U6VZ-8A1NE-5C6ML
+永久卡-1R6TG-2Y1BO-3P5HN-3F2DV-8K5JA
+永久卡-5S5QM-6W7EC-8Z9RP-0T0LB-8N4YR
+永久卡-7K3MT-9P1LZ-2X7CB-8N4RW-3T9YH
+永久卡-6D7FJ-2S6VM-4G8EK-6U1AP-5O3IC
+永久卡-0L2BR-8E4NT-2Y7WF-9H7QD-6J2ZV
+永久卡-2A2SN-7M4KX-8C1PL-8R4TG-3B8YE
+永久卡-5F7HU-7W7DS-2Q3JO-0K3VA-9Z1NM
+永久卡-1C9RP-2T8LB-1Y4EH-7G3FJ-5D2SK
+永久卡-6V3AQ-7N6MW-3X2CR-1L8PT-1B4YF
+永久卡-2H7GD-4J3KS-9U2VZ-5A8NE-9C4ML
+永久卡-4R7TG-8Y5BO-5P1HN-7F4DV-8K0JA
+永久卡-3S2QM-2W8EC-3Z1RP-5T0LB-5N7YR
+永久卡-5K8MT-2P6LZ-7X3CB-2N9RW-6T5YH
+永久卡-9D1FJ-3S0VM-8G2EK-3U9AP-4O0IC
+永久卡-1L2BR-5E7NT-0Y9WF-3H3QD-3J3ZV
+永久卡-4A5SN-7M2KX-4C5PL-5R7TG-5B8YE
+永久卡-2F0HU-6W4DS-4Q8JO-6K0VA-5Z9NM
+永久卡-9C5RP-6T3LB-6Y8EH-3G1FJ-8D8SK
+永久卡-7V1AQ-8N4MW-8X8CR-8L7PT-8B9YF
+永久卡-4H9GD-2J7KS-0U5VZ-3A4NE-9C1ML
+永久卡-2R0TG-4Y3BO-3P8HN-7F1DV-3K4JA
+永久卡-7S4QM-2W9EC-5Z8RP-8T6LB-5N0YR
+永久卡-3K1MT-8P2LZ-1X3CB-3N3RW-6T4YH
+永久卡-7D8FJ-0S7VM-0G6EK-6U2AP-0O9IC
+永久卡-2L0BR-4E2NT-4Y4WF-0H4QD-4J6ZV
+永久卡-8A1SN-2M0KX-1C5PL-1R2TG-7B3YE
+永久卡-1F7HU-8W5DS-6Q1JO-7K4VA-7Z7NM
+永久卡-8C0RP-5T8LB-7Y8EH-5G3FJ-5D8SK
+永久卡-6V6AQ-8N0MW-0X0CR-5L6PT-2B2YF
+永久卡-5H2GD-3J1KS-4U9VZ-7A3NE-7C7ML
+永久卡-5R7TG-9Y6BO-6P4HN-1F9DV-4K8JA
+永久卡-6S1QM-5W5EC-6Z5RP-9T1LB-1N6YR
+永久卡-3K9MT-0P4LZ-9X4CB-8N1RW-9T5YH
+永久卡-5D4FJ-6S6VM-4G9EK-3U6AP-7O4IC
+永久卡-7L9BR-6E6NT-0Y7WF-4H1QD-7J0ZV
+永久卡-7A2SN-0M0KX-3C2PL-5R7TG-6B3YE
+永久卡-1F0HU-7W6DS-1Q3JO-6K8VA-5Z2NM
+永久卡-5C2RP-1T8LB-1Y3EH-4G0FJ-7D6SK
+永久卡-9V6AQ-1N2MW-3X1CR-7L6PT-7B4YF
+永久卡-9H0GD-0J5KS-9U7VZ-5A4NE-7C0ML
+永久卡-6R4TG-4Y0BO-4P9HN-2F8DV-8K5JA
+永久卡-5S7QM-0W0EC-2Z7RP-1T4LB-4N3YR
+永久卡-2K4MT-5P1LZ-8X9CB-0N1RW-1T6YH
+永久卡-3D5FJ-7S2VM-1G3EK-0U4AP-0O4IC
+永久卡-4L4BR-4E1NT-7Y4WF-7H5QD-2J5ZV
+永久卡-3A0SN-6M7KX-0C2PL-3R5TG-1B6YE
+永久卡-8F4HU-8W2DS-1Q0JO-2K8VA-5Z3NM
+永久卡-1C9RP-0T4LB-4Y8EH-9G5FJ-6D1SK
+永久卡-2V7AQ-3N1MW-3X2CR-7L6PT-8B0YF
+永久卡-9H6GD-8J3KS-1U4VZ-0A2NE-6C4ML
+永久卡-8R2TG-2Y8BO-2P1HN-7F1DV-9K7JA
+永久卡-7S5QM-2W3EC-3Z3RP-5T4LB-4N8YR
+永久卡-3K5MT-3P4LZ-8X1CB-4N3RW-3T1YH
+永久卡-3D9FJ-5S8VM-7G0EK-6U0AP-4O6IC
+永久卡-7L2BR-5E2NT-1Y8WF-6H1QD-6J5ZV
+永久卡-2A3SN-6M3KX-8C8PL-5R7TG-1B7YE
+永久卡-4F8HU-1W3DS-6Q3JO-8K1VA-4Z6NM
+永久卡-1C0RP-4T9LB-8Y4EH-0G1FJ-6D7SK
+永久卡-3V8AQ-0N8MW-8X5CR-1L0PT-6B6YF
+永久卡-3H3GD-4J6KS-3U0VZ-3A4NE-6C3ML
+永久卡-8R6TG-9Y1BO-8P1HN-5F4DV-5K1JA
+永久卡-3S9QM-1W7EC-4Z9RP-6T6LB-7N3YR
+永久卡-4K7MT-8P7LZ-0X2CB-8N0RW-7T8YH
+永久卡-4D2FJ-3S0VM-6G0EK-6U7AP-1O3IC
+永久卡-4L6BR-4E6NT-6Y4WF-7H0QD-8J6ZV
+永久卡-4A8SN-8M8KX-3C4PL-3R5TG-8B3YE
+永久卡-8F2HU-8W1DS-6Q8JO-0K5VA-6Z8NM
+永久卡-4C5RP-8T5LB-8Y1EH-7G9FJ-6D8SK
+永久卡-3V3AQ-1N7MW-8X4CR-9L4PT-9B6YF
+永久卡-5H3GD-7J4KS-5U5VZ-1A5NE-1C5ML
+永久卡-1R2TG-7Y2BO-1P8HN-7F8DV-8K5JA
+永久卡-2S0QM-3W2EC-8Z2RP-3T0LB-7N1YR
+永久卡-8K9MT-8P3LZ-4X3CB-8N7RW-8T4YH
+永久卡-7D8FJ-4S1VM-3G6EK-6U5AP-6O0IC
+永久卡-5L7BR-0E5NT-7Y9WF-4H1QD-3J8ZV
+永久卡-5A2SN-3M3KX-2C7PL-8R0TG-6B1YE
+永久卡-6F9HU-8W0DS-1Q5JO-6K4VA-3Z4NM
+永久卡-6C2RP-1T4LB-0Y7EH-3G6FJ-3D3SK
+永久卡-8V1AQ-1N3MW-3X4CR-5L4PT-7B4YF
+永久卡-8H3GD-2J6KS-1U6VZ-2A0NE-4C9ML
+永久卡-5R0TG-9Y9BO-2P9HN-9F6DV-7K1JA
+永久卡-1S3QM-0W7EC-0Z1RP-0T2LB-5N8YR
+永久卡-3K6MT-1P5LZ-5X2CB-6N2RW-3T7YH
+永久卡-3D7FJ-7S8VM-2G0EK-7U9AP-3O6IC
+永久卡-5L3BR-4E0NT-1Y5WF-0H2QD-6J4ZV
+永久卡-8A2SN-8M1KX-4C9PL-1R5TG-4B6YE
+永久卡-6F0HU-6W9DS-1Q6JO-7K2VA-0Z4NM
+永久卡-4C6RP-4T0LB-1Y3EH-4G9FJ-0D6SK
+永久卡-6V4AQ-8N3MW-8X7CR-2L4PT-2B2YF
+永久卡-3H8GD-4J9KS-7U1VZ-6A8NE-4C3ML
+永久卡-3R1TG-7Y5BO-5P0HN-9F3DV-4K5JA
+永久卡-2S5QM-3W1EC-7Z3RP-8T4LB-3N7YR
+永久卡-5K0MT-7P7LZ-2X8CB-0N6RW-8T5YH
+永久卡-6D1FJ-4S4VM-2G8EK-3U6AP-7O2IC
+永久卡-1L9BR-2E4NT-8Y3WF-4H3QD-0J1ZV
+永久卡-1A5SN-8M0KX-3C8PL-3R8TG-9B7YE
+永久卡-1F1HU-7W9DS-7Q9JO-7K9VA-3Z9NM
+永久卡-1C9RP-4T4LB-8Y9EH-3G5FJ-2D6SK
+永久卡-1V6AQ-3N2MW-2X3CR-8L3PT-1B7YF
+永久卡-8H8GD-1J8KS-1U1VZ-6A6NE-4C9ML
+永久卡-7R6TG-5Y6BO-9P1HN-9F5DV-3K8JA
+永久卡-7S4QM-0W6EC-1Z4RP-0T7LB-6N1YR
+永久卡-8K6MT-6P3LZ-5X4CB-2N8RW-2T0YH
+永久卡-8D0FJ-3S6VM-5G5EK-6U9AP-9O4IC
+永久卡-8L0BR-3E7NT-3Y1WF-1H3QD-3J5ZV
+永久卡-9A3SN-1M1KX-9C4PL-6R3TG-4B3YE
+永久卡-2F8HU-6W5DS-1Q2JO-3K6VA-8Z6NM
+永久卡-6C3RP-7T7LB-4Y0EH-9G2FJ-3D8SK
+永久卡-8V0AQ-3N1MW-7X1CR-0L6PT-3B5YF
+永久卡-1H3GD-9J6KS-4U5VZ-5A4NE-0C4ML
+永久卡-6R8TG-5Y0BO-9P7HN-6F4DV-2K8JA
+永久卡-4S1QM-5W1EC-5Z8RP-9T7LB-6N6YR
+永久卡-5K4MT-4P6LZ-4X6CB-7N5RW-5T7YH
+永久卡-9D4FJ-1S5VM-3G2EK-8U4AP-3O0IC
+永久卡-2L2BR-7E9NT-5Y2WF-8H0QD-2J7ZV
+永久卡-9A6SN-0M6KX-0C6PL-0R6TG-0B6YE
+永久卡-7F4HU-8W8DS-8Q6JO-8K1VA-7Z7NM
+永久卡-7C0RP-5T2LB-2Y1EH-5G4FJ-3D9SK
+永久卡-7V4AQ-2N8MW-7X4CR-9L0PT-8B4YF
+永久卡-5H6GD-8J8KS-8U5VZ-8A8NE-9C6ML
+永久卡-9R4TG-3Y0BO-5P4HN-6F7DV-8K2JA
+永久卡-5S7QM-0W2EC-2Z3RP-1T2LB-6N8YR
+永久卡-7K7MT-3P4LZ-6X3CB-5N2RW-8T3YH
+永久卡-8D2FJ-4S3VM-6G6EK-2U8AP-8O4IC
+永久卡-1L8BR-1E1NT-6Y2WF-0H9QD-0J7ZV
+永久卡-3A1SN-6M8KX-5C6PL-3R0TG-8B2YE
+永久卡-9F8HU-1W1DS-8Q8JO-3K7VA-6Z0NM
+永久卡-3C7RP-6T3LB-6Y5EH-3G4FJ-4D0SK
+永久卡-7V7AQ-9N2MW-7X1CR-7L8PT-8B9YF
+永久卡-8H5GD-1J2KS-9U1VZ-6A8NE-0C8ML
+永久卡-7R6TG-0Y5BO-6P8HN-3F0DV-0K3JA
+永久卡-2S8QM-1W6EC-1Z6RP-7T8LB-4N7YR
+永久卡-3K4MT-6P5LZ-4X9CB-1N1RW-2T6YH
+永久卡-4D0FJ-7S2VM-5G1EK-5U4AP-1O8IC
+永久卡-4L2BR-6E3NT-8Y7WF-1H2QD-7J6ZV
+永久卡-8A5SN-2M3KX-2C7PL-7R6TG-3B6YE
+永久卡-2F3HU-8W7DS-3Q7JO-0K6VA-6Z3NM
+永久卡-8C0RP-5T8LB-8Y2EH-9G7FJ-1D6SK
+永久卡-9V0AQ-4N2MW-5X3CR-8L1PT-0B3YF
+永久卡-3H6GD-6J2KS-7U5VZ-0A5NE-8C4ML
+永久卡-8R4TG-4Y7BO-7P8HN-7F6DV-1K6JA
+永久卡-5S0QM-6W9EC-1Z5RP-8T8LB-1N0YR
+永久卡-5K3MT-0P8LZ-1X3CB-4N2RW-9T5YH
+永久卡-4D8FJ-6S6VM-0G4EK-4U5AP-3O6IC
+永久卡-9L5BR-1E4NT-6Y3WF-4H4QD-3J3ZV
+永久卡-3A4SN-6M4KX-9C6PL-3R7TG-5B4YE
+永久卡-9F4HU-4W6DS-2Q1JO-5K3VA-1Z1NM
+永久卡-9C5RP-9T3LB-7Y6EH-2G3FJ-5D2SK
+永久卡-6V7AQ-2N8MW-3X7CR-7L1PT-0B6YF
+永久卡-2H4GD-2J0KS-9U7VZ-8A9NE-4C7ML
+永久卡-7R0TG-5Y9BO-5P5HN-4F8DV-3K3JA
+永久卡-3S4QM-0W7EC-3Z5RP-7T2LB-4N0YR
+永久卡-8K8MT-7P1LZ-6X5CB-3N3RW-1T6YH
+永久卡-7D0FJ-2S3VM-7G7EK-3U2AP-6O3IC
+永久卡-9L0BR-4E1NT-2Y5WF-5H1QD-1J9ZV
+永久卡-7A8SN-2M5KX-5C3PL-8R6TG-0B5YE
+永久卡-9F4HU-2W3DS-6Q0JO-0K3VA-7Z4NM
+永久卡-9C1RP-7T2LB-5Y1EH-3G8FJ-2D5SK
+永久卡-4V1AQ-2N8MW-0X6CR-1L3PT-9B7YF
+永久卡-6H5GD-9J1KS-6U3VZ-9A1NE-0C9ML
+永久卡-4R3TG-7Y9BO-3P4HN-3F4DV-3K2JA
+永久卡-6S1QM-9W4EC-4Z0RP-4T3LB-3N9YR
+永久卡-4K5MT-1P0LZ-3X7CB-0N5RW-1T3YH
+永久卡-8D4FJ-8S9VM-2G5EK-0U2AP-2O8IC
+永久卡-2L9BR-2E8NT-5Y2WF-9H0QD-7J0ZV
+永久卡-5A8SN-0M1KX-6C4PL-4R3TG-6B4YE
+永久卡-4F3HU-3W2DS-1Q0JO-8K4VA-6Z7NM
+永久卡-3C9RP-1T6LB-8Y0EH-5G0FJ-1D8SK
+永久卡-6V8AQ-1N5MW-9X4CR-2L1PT-0B6YF
+永久卡-2H7GD-4J4KS-6U2VZ-8A1NE-7C5ML
+永久卡-8R7TG-6Y4BO-9P1HN-3F5DV-3K5JA
+永久卡-7S5QM-1W1EC-1Z0RP-4T5LB-4N7YR
+永久卡-6K0MT-2P1LZ-6X4CB-2N1RW-7T2YH
+永久卡-6D5FJ-5S4VM-0G9EK-8U0AP-3O6IC
+永久卡-1L1BR-4E6NT-6Y7WF-1H0QD-5J3ZV
+永久卡-4A4SN-8M1KX-6C9PL-5R1TG-5B7YE
+永久卡-7F9HU-6W5DS-0Q1JO-3K8VA-9Z2NM
+永久卡-7C7RP-8T5LB-7Y3EH-6G0FJ-1D7SK
+永久卡-2V4AQ-9N0MW-5X7CR-6L2PT-4B1YF
+永久卡-2H6GD-1J5KS-6U1VZ-7A5NE-0C7ML
+永久卡-4R6TG-9Y0BO-6P3HN-1F6DV-4K5JA
+永久卡-4S3QM-9W9EC-8Z8RP-8T0LB-9N4YR
+永久卡-7K1MT-1P9LZ-8X6CB-2N4RW-8T5YH
+永久卡-2D3FJ-2S9VM-9G2EK-8U2AP-7O1IC
+永久卡-9L7BR-0E1NT-5Y5WF-8H1QD-8J4ZV
+永久卡-7A1SN-2M8KX-0C0PL-9R6TG-7B6YE
+永久卡-8F3HU-3W7DS-3Q0JO-5K6VA-4Z9NM
+永久卡-9C0RP-8T0LB-8Y4EH-6G1FJ-1D7SK
+永久卡-4V8AQ-6N3MW-1X8CR-4L5PT-1B4YF
+永久卡-6H7GD-8J1KS-1U2VZ-5A7NE-2C0ML
+永久卡-8R5TG-8Y9BO-4P2HN-7F3DV-6K7JA
+永久卡-8S4QM-3W5EC-4Z9RP-1T8LB-5N2YR
+永久卡-4K0MT-4P1LZ-4X6CB-9N0RW-9T3YH
+永久卡-9D4FJ-0S7VM-1G0EK-2U3AP-0O9IC
+永久卡-6L5BR-1E9NT-6Y8WF-3H9QD-1J4ZV
+永久卡-6A3SN-2M8KX-0C5PL-5R0TG-1B2YE
+永久卡-7F9HU-4W2DS-7Q3JO-0K3VA-1Z6NM
+永久卡-7C1RP-3T6LB-3Y2EH-1G2FJ-4D1SK
+永久卡-6V5AQ-4N9MW-9X7CR-4L2PT-9B4YF
+永久卡-3H7GD-1J8KS-4U3VZ-0A9NE-0C2ML
+永久卡-2R2TG-2Y5BO-0P4HN-8F1DV-8K6JA
+永久卡-5S1QM-8W7EC-9Z4RP-3T4LB-2N5YR
+永久卡-1K3MT-0P6LZ-4X9CB-8N2RW-7T4YH
+永久卡-6D6FJ-8S2VM-8G2EK-9U0AP-1O4IC
+永久卡-8L4BR-5E2NT-7Y2WF-6H2QD-5J2ZV
+永久卡-9A3SN-4M3KX-9C1PL-1R7TG-7B8YE
+永久卡-1F4HU-5W2DS-8Q6JO-2K8VA-0Z7NM
+永久卡-3C5RP-2T1LB-2Y0EH-8G0FJ-1D8SK
+永久卡-1V2AQ-9N5MW-0X3CR-3L9PT-0B7YF
+永久卡-1H9GD-3J3KS-5U7VZ-0A7NE-2C8ML
+永久卡-7R6TG-4Y0BO-4P9HN-4F1DV-7K8JA
+永久卡-1S8QM-3W9EC-5Z2RP-0T5LB-1N0YR
+永久卡-8K3MT-3P8LZ-9X5CB-1N9RW-5T3YH
+永久卡-6D7FJ-8S3VM-4G1EK-9U6AP-7O4IC
+永久卡-1L7BR-3E5NT-8Y3WF-8H7QD-0J9ZV
+永久卡-9A5SN-3M3KX-2C9PL-3R3TG-5B4YE
+永久卡-5F3HU-6W4DS-3Q8JO-5K0VA-4Z1NM
+永久卡-6C9RP-2T5LB-8Y2EH-1G4FJ-1D3SK
+永久卡-6V2AQ-3N3MW-0X0CR-2L6PT-8B9YF
+永久卡-3H9GD-0J9KS-3U5VZ-4A7NE-0C2ML
+永久卡-5R2TG-7Y6BO-8P6HN-6F1DV-6K4JA
+永久卡-1S5QM-3W0EC-0Z6RP-0T8LB-9N6YR
+永久卡-8K7MT-5P8LZ-9X5CB-2N9RW-6T1YH
+永久卡-8D0FJ-6S2VM-9G6EK-1U1AP-0O6IC
+永久卡-3L6BR-3E1NT-9Y1WF-5H8QD-1J7ZV
+永久卡-5A4SN-7M6KX-4C0PL-0R9TG-0B8YE
+永久卡-5F5HU-8W2DS-2Q2JO-0K8VA-1Z6NM
+永久卡-3C7RP-1T5LB-0Y6EH-1G0FJ-3D2SK
+永久卡-8V4AQ-0N9MW-0X3CR-4L8PT-7B4YF
+永久卡-6H6GD-8J7KS-9U4VZ-4A1NE-3C8ML
+永久卡-1R0TG-7Y9BO-3P2HN-7F3DV-1K4JA
+永久卡-9S4QM-2W2EC-3Z0RP-6T2LB-4N5YR
+永久卡-6K9MT-8P7LZ-9X0CB-1N5RW-5T0YH
+永久卡-8D7FJ-8S3VM-7G3EK-1U5AP-3O7IC
+永久卡-2L8BR-5E0NT-5Y6WF-4H4QD-8J0ZV
+永久卡-4A4SN-4M5KX-3C2PL-6R4TG-8B9YE
+永久卡-8F7HU-6W0DS-6Q3JO-8K9VA-9Z7NM
+永久卡-8C1RP-7T9LB-4Y2EH-8G6FJ-9D6SK
+永久卡-7V9AQ-6N5MW-9X5CR-8L8PT-2B7YF
+永久卡-4H0GD-4J7KS-7U7VZ-7A2NE-4C0ML
+永久卡-5R1TG-6Y8BO-6P2HN-3F4DV-4K7JA
+永久卡-6S6QM-4W7EC-7Z9RP-7T6LB-3N0YR
+永久卡-6K5MT-4P7LZ-4X1CB-3N5RW-8T8YH
+永久卡-2D3FJ-4S8VM-2G4EK-2U3AP-9O5IC
+永久卡-9L2BR-8E7NT-5Y9WF-1H6QD-6J4ZV
+永久卡-4A5SN-7M5KX-4C4PL-2R5TG-4B4YE
+永久卡-8F3HU-3W7DS-7Q0JO-0K0VA-8Z1NM
+永久卡-2C5RP-7T4LB-0Y9EH-4G8FJ-5D1SK
+永久卡-7V0AQ-6N2MW-6X7CR-3L3PT-1B6YF
+永久卡-2H4GD-4J0KS-6U8VZ-6A3NE-8C6ML
+永久卡-3R8TG-3Y5BO-7P7HN-3F9DV-7K2JA
+永久卡-7S4QM-3W3EC-6Z5RP-4T9LB-2N1YR
+永久卡-7K8MT-3P4LZ-0X4CB-3N8RW-1T4YH
+永久卡-8D6FJ-7S2VM-4G8EK-1U0AP-6O8IC
+永久卡-5L6BR-4E1NT-4Y1WF-3H6QD-4J6ZV
+永久卡-8A5SN-2M5KX-1C1PL-4R9TG-1B3YE
+永久卡-5F2HU-7W1DS-0Q4JO-7K4VA-2Z0NM
+永久卡-4C0RP-8T1LB-0Y2EH-2G8FJ-8D4SK
+永久卡-8V8AQ-9N0MW-5X2CR-8L5PT-8B2YF
+永久卡-1H3GD-3J4KS-0U0VZ-9A4NE-9C0ML
+永久卡-9R4TG-7Y2BO-3P0HN-9F3DV-5K2JA
+永久卡-9S6QM-8W6EC-7Z1RP-9T1LB-1N0YR
+永久卡-6K4MT-5P5LZ-2X6CB-9N3RW-3T5YH
+永久卡-4D8FJ-2S0VM-3G7EK-7U5AP-4O7IC
+永久卡-1L4BR-6E0NT-3Y8WF-5H7QD-2J3ZV
+永久卡-6A7SN-1M9KX-6C8PL-7R3TG-4B8YE
+永久卡-3F2HU-0W5DS-5Q6JO-8K0VA-7Z3NM
+永久卡-4C3RP-7T1LB-5Y8EH-5G1FJ-2D7SK
+永久卡-8V2AQ-8N2MW-4X4CR-2L2PT-1B0YF
+永久卡-7H1GD-0J5KS-3U5VZ-4A9NE-0C2ML
+永久卡-5R8TG-3Y8BO-1P3HN-8F2DV-4K5JA
+永久卡-8S6QM-8W3EC-3Z9RP-3T7LB-3N8YR
+永久卡-5K0MT-6P6LZ-0X5CB-6N7RW-8T6YH
+永久卡-4D9FJ-5S9VM-5G3EK-7U6AP-2O1IC
+永久卡-9L6BR-1E4NT-8Y4WF-4H5QD-3J8ZV
+永久卡-3A7SN-1M8KX-9C3PL-4R0TG-7B2YE
+永久卡-2F2HU-9W7DS-4Q4JO-9K5VA-8Z4NM
+永久卡-7C7RP-9T2LB-4Y7EH-2G3FJ-1D3SK
+永久卡-2V9AQ-4N0MW-8X5CR-6L9PT-7B0YF
+永久卡-7H5GD-2J2KS-4U8VZ-8A4NE-0C5ML
+永久卡-9R1TG-2Y7BO-7P2HN-9F6DV-3K0JA
+永久卡-6S9QM-8W3EC-9Z2RP-2T6LB-3N4YR
+永久卡-9K0MT-2P1LZ-5X8CB-4N4RW-2T5YH
+永久卡-7D4FJ-5S6VM-2G2EK-3U8AP-1O3IC
+永久卡-2L8BR-1E6NT-2Y4WF-3H3QD-6J7ZV
+永久卡-3A9SN-7M7KX-9C5PL-2R0TG-7B3YE
+永久卡-9F5HU-0W9DS-7Q9JO-4K7VA-2Z3NM
+永久卡-8C0RP-3T9LB-3Y1EH-8G0FJ-7D5SK
+永久卡-5V0AQ-6N7MW-2X4CR-2L4PT-3B7YF
+永久卡-6H4GD-6J0KS-2U8VZ-0A3NE-7C9ML
+永久卡-6R9TG-9Y2BO-6P6HN-6F8DV-4K1JA
+永久卡-2S0QM-7W8EC-3Z1RP-3T7LB-1N2YR
+永久卡-1K9MT-2P3LZ-4X1CB-8N5RW-0T3YH
+永久卡-6D0FJ-1S0VM-6G1EK-9U7AP-6O1IC
+永久卡-2L3BR-0E6NT-3Y1WF-0H4QD-7J0ZV
+永久卡-2A7SN-3M4KX-4C9PL-5R0TG-7B9YE
+永久卡-5F6HU-8W2DS-0Q0JO-2K4VA-1Z5NM
+永久卡-6C8RP-7T1LB-2Y2EH-1G3FJ-4D8SK
+永久卡-1V5AQ-1N4MW-9X3CR-9L4PT-6B3YF
+永久卡-6H5GD-4J4KS-5U5VZ-4A7NE-9C8ML
+永久卡-8R3TG-9Y9BO-1P4HN-2F8DV-9K1JA
+永久卡-4S1QM-8W5EC-7Z0RP-7T7LB-5N3YR
+永久卡-1K1MT-9P4LZ-7X8CB-1N0RW-6T4YH
+永久卡-5D2FJ-8S3VM-2G3EK-4U9AP-9O7IC
+永久卡-9L2BR-7E2NT-1Y5WF-0H1QD-1J6ZV
+永久卡-8A0SN-2M4KX-8C8PL-2R1TG-3B8YE
+永久卡-8F0HU-1W9DS-2Q0JO-3K7VA-5Z4NM
+永久卡-7C9RP-6T7LB-0Y0EH-8G3FJ-4D9SK
+永久卡-3V0AQ-5N2MW-4X9CR-2L7PT-8B8YF
+永久卡-9H0GD-8J4KS-8U9VZ-7A4NE-1C4ML
+永久卡-2R6TG-2Y8BO-1P5HN-7F7DV-2K9JA
+永久卡-8S0QM-8W2EC-2Z3RP-9T9LB-4N2YR
+永久卡-9K8MT-8P9LZ-3X2CB-3N6RW-6T3YH
+永久卡-1D7FJ-3S3VM-4G3EK-6U9AP-1O1IC
+永久卡-7L5BR-7E9NT-7Y3WF-3H7QD-2J6ZV
+永久卡-2A5SN-6M4KX-9C3PL-7R1TG-1B3YE
+永久卡-7F8HU-1W2DS-9Q7JO-1K0VA-2Z8NM
+永久卡-4C5RP-6T5LB-1Y9EH-1G0FJ-8D8SK
+永久卡-2V0AQ-9N8MW-4X2CR-2L4PT-7B3YF
+永久卡-6H0GD-1J1KS-1U2VZ-9A8NE-6C8ML
+永久卡-4R2TG-9Y7BO-2P6HN-9F8DV-3K6JA
+永久卡-7S8QM-7W3EC-5Z2RP-7T6LB-4N9YR
+永久卡-2K7MT-5P8LZ-1X3CB-6N7RW-6T8YH
+永久卡-4D1FJ-4S4VM-2G9EK-3U4AP-5O7IC
+永久卡-3L9BR-2E9NT-9Y7WF-3H0QD-2J0ZV
+永久卡-4A1SN-6M9KX-5C0PL-3R4TG-6B8YE
+永久卡-1F9HU-4W1DS-1Q5JO-6K0VA-9Z7NM
+永久卡-9C4RP-3T2LB-2Y6EH-1G1FJ-4D4SK
+永久卡-7V6AQ-5N9MW-2X4CR-8L7PT-8B6YF
+永久卡-9H2GD-4J5KS-3U8VZ-3A2NE-1C7ML
+永久卡-3R3TG-8Y1BO-9P2HN-3F0DV-9K5JA
+永久卡-4S8QM-6W8EC-9Z9RP-7T7LB-8N0YR
+永久卡-6K2MT-1P8LZ-6X1CB-5N6RW-2T3YH
+永久卡-7D2FJ-4S7VM-5G8EK-5U0AP-8O4IC
+永久卡-8L4BR-9E3NT-3Y5WF-1H9QD-4J8ZV
+永久卡-5A0SN-3M1KX-7C7PL-4R1TG-2B6YE
+永久卡-9F4HU-5W7DS-1Q3JO-2K7VA-5Z0NM
+永久卡-2C0RP-3T6LB-4Y0EH-3G4FJ-8D9SK
+永久卡-6V5AQ-9N1MW-5X4CR-1L5PT-9B3YF
+永久卡-9H5GD-4J3KS-5U7VZ-6A6NE-3C6ML
+永久卡-2R1TG-9Y6BO-8P3HN-1F7DV-8K8JA
+永久卡-7S2QM-6W7EC-4Z5RP-4T7LB-3N5YR
+永久卡-5K2MT-5P4LZ-9X2CB-2N0RW-7T1YH
+永久卡-9D8FJ-5S4VM-8G7EK-5U5AP-2O6IC
+永久卡-2L3BR-7E7NT-7Y1WF-6H8QD-5J2ZV
+永久卡-8A4SN-3M1KX-1C6PL-8R2TG-0B1YE
+永久卡-9F1HU-8W8DS-6Q8JO-3K1VA-5Z0NM
+永久卡-6C7RP-5T6LB-1Y8EH-5G5FJ-7D5SK
+永久卡-7V3AQ-3N0MW-2X4CR-9L3PT-4B6YF
+永久卡-6H6GD-8J4KS-6U0VZ-1A0NE-8C2ML
+永久卡-6R8TG-7Y2BO-2P0HN-5F8DV-5K6JA
+永久卡-4S0QM-1W3EC-7Z2RP-4T6LB-6N3YR
+永久卡-7K9MT-2P6LZ-2X2CB-4N9RW-4T1YH
+永久卡-1D8FJ-7S0VM-5G0EK-9U4AP-9O3IC
+永久卡-9L4BR-1E5NT-1Y1WF-7H3QD-9J0ZV
+永久卡-8A7SN-2M1KX-3C6PL-2R6TG-7B8YE
+永久卡-3F0HU-4W3DS-3Q6JO-2K8VA-0Z2NM
+永久卡-4C1RP-9T2LB-6Y9EH-5G5FJ-4D9SK
+永久卡-2V3AQ-7N7MW-6X0CR-5L0PT-7B7YF
+永久卡-7H3GD-1J5KS-7U1VZ-9A9NE-0C2ML
+永久卡-4R6TG-4Y2BO-2P5HN-7F0DV-8K9JA
+永久卡-8S1QM-2W8EC-7Z3RP-6T7LB-6N3YR
+永久卡-2K5MT-4P2LZ-8X5CB-8N2RW-4T3YH
+永久卡-1D6FJ-4S4VM-6G9EK-6U0AP-2O0IC
+永久卡-5L2BR-5E1NT-7Y8WF-7H2QD-8J8ZV
+永久卡-7A1SN-9M4KX-8C8PL-9R0TG-7B9YE
+永久卡-9F6HU-6W2DS-2Q6JO-3K1VA-1Z3NM
+永久卡-7C3RP-5T8LB-4Y6EH-7G3FJ-9D7SK
+永久卡-4V3AQ-5N5MW-9X7CR-4L4PT-0B0YF
+永久卡-2H6GD-6J3KS-2U1VZ-5A7NE-6C4ML
+永久卡-4R0TG-2Y4BO-2P1HN-8F5DV-6K0JA
+永久卡-1S5QM-1W6EC-1Z7RP-1T9LB-3N0YR
+永久卡-5K3MT-4P7LZ-1X4CB-0N4RW-1T2YH
+永久卡-9D5FJ-6S2VM-5G5EK-2U2AP-3O5IC
+永久卡-5L3BR-5E9NT-5Y4WF-3H3QD-1J3ZV
+永久卡-3A5SN-3M6KX-0C0PL-0R0TG-2B1YE
+永久卡-2F0HU-4W9DS-5Q1JO-1K0VA-8Z4NM
+永久卡-9C4RP-5T3LB-9Y2EH-7G9FJ-7D1SK
+永久卡-9V3AQ-1N7MW-8X0CR-5L3PT-7B6YF
+永久卡-7H7GD-6J2KS-3U3VZ-7A6NE-3C1ML
+永久卡-8R5TG-9Y5BO-7P0HN-3F6DV-1K8JA
+永久卡-2S9QM-6W8EC-8Z8RP-3T8LB-7N3YR
+永久卡-6K0MT-9P1LZ-2X9CB-8N6RW-4T8YH
+永久卡-5D2FJ-6S5VM-2G5EK-4U9AP-6O7IC
+永久卡-2L7BR-7E4NT-7Y2WF-0H6QD-0J2ZV
+永久卡-3A6SN-4M6KX-8C2PL-2R6TG-4B8YE
+永久卡-7F6HU-4W6DS-9Q0JO-7K6VA-7Z3NM
+永久卡-5C1RP-6T1LB-2Y8EH-0G2FJ-4D4SK
+永久卡-5V6AQ-8N7MW-4X5CR-0L7PT-3B0YF
+永久卡-6H9GD-9J8KS-9U6VZ-9A8NE-3C9ML
+永久卡-4R5TG-3Y9BO-2P7HN-1F0DV-9K6JA
+永久卡-1S4QM-4W2EC-7Z6RP-7T6LB-7N5YR
+永久卡-2K1MT-3P7LZ-5X1CB-6N2RW-3T2YH
+永久卡-9D9FJ-1S6VM-8G2EK-9U1AP-5O5IC
+永久卡-3L0BR-7E3NT-1Y4WF-0H6QD-1J7ZV
+永久卡-4A7SN-6M5KX-4C8PL-7R3TG-4B5YE
+永久卡-9F8HU-3W5DS-7Q6JO-8K8VA-1Z7NM
+永久卡-8C3RP-8T5LB-4Y5EH-5G3FJ-7D9SK
+永久卡-8V1AQ-5N8MW-4X2CR-1L8PT-2B3YF
+永久卡-5H1GD-2J9KS-2U8VZ-2A2NE-1C5ML
+永久卡-1R3TG-8Y3BO-2P3HN-7F3DV-2K3JA
+永久卡-8S8QM-1W8EC-1Z6RP-2T1LB-3N4YR
+永久卡-7K1MT-9P9LZ-8X3CB-6N5RW-7T1YH
+永久卡-9D3FJ-5S8VM-4G6EK-4U5AP-2O5IC
+永久卡-4L9BR-8E6NT-8Y1WF-9H7QD-4J4ZV
+永久卡-8A1SN-2M7KX-2C4PL-7R9TG-4B1YE
+永久卡-6F7HU-7W4DS-3Q9JO-1K1VA-5Z6NM
+永久卡-7C2RP-6T1LB-8Y6EH-5G6FJ-2D7SK
+永久卡-5V1AQ-1N0MW-7X1CR-5L0PT-0B8YF
+永久卡-6H4GD-4J2KS-6U6VZ-5A3NE-6C3ML
+永久卡-4R8TG-4Y4BO-9P8HN-4F5DV-4K0JA
+永久卡-8S5QM-6W6EC-6Z4RP-3T9LB-5N4YR
+永久卡-1K9MT-1P2LZ-4X3CB-3N8RW-5T5YH
+永久卡-2D0FJ-8S0VM-6G7EK-2U8AP-5O1IC
+永久卡-8L2BR-6E4NT-4Y1WF-5H4QD-8J9ZV
+永久卡-6A2SN-5M3KX-7C6PL-4R0TG-7B1YE
+永久卡-5F8HU-4W3DS-2Q2JO-9K4VA-6Z8NM
+永久卡-6C2RP-4T6LB-1Y2EH-3G7FJ-5D0SK
+永久卡-6V7AQ-2N4MW-8X0CR-2L1PT-4B3YF
+永久卡-2H2GD-2J0KS-5U4VZ-9A7NE-3C2ML
+永久卡-2R5TG-1Y9BO-1P6HN-5F4DV-6K4JA
+永久卡-1S2QM-2W4EC-5Z6RP-2T2LB-7N5YR
+永久卡-4K3MT-4P1LZ-2X0CB-3N9RW-5T7YH
+永久卡-6D3FJ-3S7VM-8G8EK-6U6AP-8O5IC
+永久卡-4L8BR-3E5NT-1Y0WF-3H6QD-2J8ZV
+永久卡-9A3SN-4M2KX-7C7PL-1R6TG-2B1YE
+永久卡-1F3HU-5W6DS-9Q2JO-8K1VA-0Z6NM
+永久卡-9C7RP-2T5LB-8Y3EH-3G5FJ-8D3SK
+永久卡-2V4AQ-9N8MW-8X2CR-4L0PT-6B7YF
+永久卡-6H1GD-2J2KS-2U6VZ-0A8NE-6C2ML
+永久卡-5R9TG-5Y4BO-2P9HN-1F2DV-2K6JA
+永久卡-9S8QM-3W3EC-4Z9RP-1T2LB-3N1YR
+永久卡-8K0MT-7P9LZ-2X1CB-4N2RW-9T2YH
+永久卡-4D3FJ-7S0VM-1G1EK-3U1AP-3O7IC
+永久卡-6L6BR-6E4NT-6Y3WF-6H0QD-3J2ZV
+永久卡-7A5SN-2M8KX-1C9PL-9R8TG-1B5YE
+永久卡-3F0HU-5W4DS-4Q9JO-2K6VA-1Z0NM
+永久卡-9C1RP-2T4LB-2Y6EH-8G8FJ-0D0SK
+永久卡-8V7AQ-7N9MW-1X8CR-6L6PT-4B0YF
+永久卡-5H0GD-3J8KS-3U9VZ-5A0NE-2C8ML
+永久卡-3R4TG-7Y2BO-5P7HN-6F3DV-4K9JA
+永久卡-5S0QM-4W8EC-9Z2RP-5T5LB-8N0YR
+永久卡-6K6MT-7P2LZ-2X0CB-7N4RW-2T8YH
+永久卡-7D4FJ-5S4VM-5G9EK-7U4AP-1O4IC
+永久卡-6L0BR-1E0NT-8Y3WF-4H1QD-5J7ZV
+永久卡-5A8SN-2M2KX-6C5PL-5R7TG-3B8YE
+永久卡-7F1HU-6W3DS-6Q3JO-9K2VA-8Z7NM
+永久卡-4C9RP-7T3LB-8Y5EH-2G0FJ-9D4SK
+永久卡-6V5AQ-7N4MW-3X5CR-7L4PT-6B6YF
+永久卡-7H6GD-9J2KS-4U5VZ-1A3NE-1C4ML
+永久卡-3R7TG-5Y1BO-6P4HN-5F3DV-3K9JA
+永久卡-6S3QM-8W1EC-7Z7RP-3T0LB-7N4YR
+永久卡-1K2MT-6P6LZ-1X3CB-7N0RW-3T8YH
+永久卡-3D1FJ-5S4VM-5G3EK-1U5AP-5O4IC
+永久卡-8L6BR-3E6NT-7Y9WF-4H3QD-8J0ZV
+永久卡-4A0SN-3M9KX-0C5PL-2R7TG-5B2YE
+永久卡-7F3HU-6W0DS-7Q6JO-7K8VA-7Z4NM
+永久卡-9C8RP-2T4LB-9Y0EH-2G2FJ-4D7SK
+永久卡-1V4AQ-8N8MW-7X8CR-8L1PT-5B0YF
+永久卡-5H9GD-8J8KS-7U3VZ-2A9NE-4C9ML
+永久卡-6R7TG-4Y9BO-7P1HN-7F6DV-8K4JA
+永久卡-2S2QM-1W5EC-9Z7RP-8T1LB-7N9YR
+永久卡-3K8MT-6P2LZ-5X5CB-4N4RW-7T0YH
+永久卡-9D8FJ-9S7VM-9G8EK-8U4AP-6O9IC
+永久卡-3L2BR-3E8NT-6Y5WF-9H2QD-8J7ZV
+永久卡-4A3SN-1M6KX-6C9PL-1R1TG-5B9YE
+永久卡-4F9HU-6W4DS-6Q0JO-5K3VA-5Z8NM
+永久卡-3C6RP-8T6LB-2Y5EH-7G1FJ-9D6SK
+永久卡-5V9AQ-2N2MW-6X7CR-9L7PT-0B2YF
+永久卡-4H3GD-7J7KS-7U8VZ-5A7NE-4C1ML
+永久卡-2R1TG-9Y6BO-9P8HN-8F1DV-5K9JA
+永久卡-4S9QM-7W8EC-6Z6RP-9T9LB-2N8YR
+永久卡-4K4MT-9P0LZ-8X4CB-7N9RW-7T2YH
+永久卡-2D0FJ-4S8VM-2G6EK-3U7AP-0O6IC
+永久卡-2L2BR-6E8NT-7Y1WF-9H2QD-8J1ZV
+永久卡-8A6SN-3M3KX-5C0PL-5R4TG-7B7YE
+永久卡-3F7HU-7W6DS-5Q4JO-4K1VA-6Z4NM
+永久卡-8C2RP-4T5LB-4Y1EH-5G9FJ-5D8SK
+永久卡-9V1AQ-6N6MW-4X4CR-2L2PT-7B8YF
+永久卡-9H7GD-5J9KS-7U3VZ-2A9NE-5C2ML
+永久卡-7R2TG-8Y9BO-6P8HN-4F4DV-3K8JA
+永久卡-2S5QM-1W7EC-1Z3RP-7T6LB-7N5YR
+永久卡-7K0MT-1P6LZ-4X7CB-3N9RW-9T6YH
+永久卡-7D7FJ-3S0VM-7G2EK-2U4AP-9O1IC
+永久卡-1L3BR-3E4NT-4Y1WF-9H8QD-9J7ZV
+永久卡-2A3SN-8M9KX-5C9PL-9R4TG-2B3YE
+永久卡-3F9HU-2W0DS-5Q0JO-6K5VA-7Z5NM
+永久卡-8C9RP-3T1LB-3Y5EH-5G8FJ-7D5SK
+永久卡-2V0AQ-4N8MW-1X5CR-3L6PT-9B3YF
+永久卡-7H1GD-6J6KS-9U0VZ-9A0NE-6C7ML
+永久卡-5R9TG-7Y9BO-3P7HN-2F6DV-5K0JA
+永久卡-3S4QM-4W7EC-7Z4RP-3T7LB-7N7YR
+永久卡-4K8MT-2P2LZ-6X6CB-9N7RW-5T3YH
+永久卡-6D9FJ-8S1VM-2G8EK-8U0AP-2O8IC
+永久卡-3L9BR-3E4NT-2Y3WF-6H9QD-4J1ZV
+永久卡-5A0SN-7M4KX-3C0PL-5R1TG-7B0YE
+永久卡-1F6HU-8W9DS-8Q5JO-7K3VA-4Z9NM
+永久卡-6C8RP-8T5LB-2Y6EH-8G8FJ-3D4SK
+永久卡-7V6AQ-2N6MW-2X0CR-1L0PT-4B2YF
+永久卡-2H9GD-3J5KS-4U2VZ-1A2NE-0C4ML
+永久卡-3R5TG-1Y7BO-8P1HN-5F9DV-4K5JA
+永久卡-6S4QM-9W6EC-3Z5RP-6T4LB-9N8YR
+永久卡-7K2MT-3P2LZ-6X9CB-5N4RW-8T2YH
+永久卡-8D1FJ-7S3VM-9G3EK-5U4AP-4O7IC
+永久卡-3L9BR-5E1NT-2Y9WF-1H9QD-5J7ZV
+永久卡-2A5SN-4M6KX-3C4PL-6R1TG-4B5YE
+永久卡-4F9HU-2W5DS-2Q4JO-6K7VA-1Z2NM
+永久卡-8C3RP-8T0LB-6Y3EH-4G1FJ-1D8SK
+永久卡-9V8AQ-8N7MW-8X4CR-6L2PT-8B6YF
+永久卡-5H6GD-6J3KS-3U1VZ-4A2NE-2C7ML
+永久卡-8R4TG-9Y0BO-4P5HN-4F2DV-5K6JA
+永久卡-8S9QM-1W0EC-8Z3RP-2T8LB-1N2YR
+永久卡-4K6MT-8P7LZ-5X6CB-1N2RW-2T7YH
+永久卡-9D2FJ-2S5VM-2G7EK-2U4AP-6O4IC
+永久卡-4L8BR-8E2NT-9Y3WF-1H8QD-1J9ZV
+永久卡-8A0SN-4M7KX-1C0PL-2R4TG-1B1YE
+永久卡-8F0HU-6W5DS-7Q6JO-4K8VA-3Z6NM
+永久卡-5C0RP-1T6LB-7Y2EH-7G8FJ-1D2SK
+永久卡-2V2AQ-4N9MW-8X0CR-7L8PT-6B7YF
+永久卡-1H2GD-9J7KS-8U6VZ-3A2NE-2C1ML
+永久卡-8R1TG-1Y9BO-7P2HN-6F6DV-7K5JA
+永久卡-2S7QM-8W6EC-9Z8RP-1T7LB-5N2YR
+永久卡-2K5MT-5P5LZ-7X2CB-2N7RW-4T4YH
+永久卡-6D0FJ-9S4VM-9G1EK-8U7AP-3O9IC
+永久卡-9L1BR-4E2NT-5Y4WF-3H5QD-5J0ZV
+永久卡-8A9SN-1M0KX-9C9PL-6R2TG-1B0YE
+永久卡-9F5HU-9W7DS-7Q9JO-3K9VA-9Z1NM
+永久卡-8C2RP-5T9LB-8Y2EH-2G0FJ-9D9SK
+永久卡-9V3AQ-8N6MW-2X0CR-3L1PT-3B3YF
+永久卡-1H8GD-8J2KS-2U2VZ-3A8NE-8C8ML
+永久卡-9R9TG-6Y1BO-4P8HN-9F7DV-5K8JA
+永久卡-4S6QM-7W0EC-8Z5RP-5T1LB-8N9YR
+永久卡-5K6MT-6P0LZ-5X3CB-6N8RW-6T9YH
+永久卡-4D8FJ-4S9VM-8G9EK-4U5AP-4O1IC
+永久卡-8L6BR-1E6NT-4Y2WF-5H2QD-4J4ZV
+永久卡-5A9SN-7M4KX-7C3PL-1R8TG-8B3YE
+永久卡-7F1HU-2W8DS-5Q8JO-9K6VA-6Z7NM
+永久卡-6C1RP-3T4LB-5Y3EH-5G0FJ-2D8SK
+永久卡-8V0AQ-7N1MW-8X4CR-7L5PT-1B2YF
+永久卡-7H3GD-8J3KS-4U8VZ-3A5NE-1C3ML
+永久卡-2R6TG-4Y6BO-3P4HN-4F8DV-5K6JA
+永久卡-8S8QM-3W8EC-9Z7RP-5T4LB-1N6YR
+永久卡-2K4MT-5P3LZ-7X2CB-4N5RW-3T1YH
+永久卡-7D6FJ-1S4VM-8G0EK-6U3AP-8O4IC
+永久卡-5L5BR-1E6NT-9Y5WF-1H7QD-7J1ZV
+永久卡-3A4SN-7M9KX-6C8PL-3R4TG-8B8YE
+永久卡-1F8HU-8W7DS-4Q5JO-7K2VA-1Z8NM
+永久卡-9C6RP-3T1LB-1Y8EH-9G5FJ-3D7SK
+永久卡-3V5AQ-6N1MW-9X8CR-2L8PT-8B6YF
+永久卡-5H7GD-5J3KS-3U4VZ-8A0NE-2C4ML
+永久卡-8R2TG-1Y2BO-8P9HN-6F7DV-8K7JA
+永久卡-4S1QM-5W9EC-6Z4RP-3T1LB-5N4YR
+永久卡-2K2MT-8P2LZ-8X8CB-5N1RW-3T5YH
+永久卡-6D1FJ-5S4VM-7G8EK-8U0AP-3O8IC
+永久卡-2L7BR-7E3NT-5Y4WF-4H1QD-1J4ZV
+永久卡-2A6SN-5M2KX-5C6PL-1R3TG-9B8YE
+永久卡-3F5HU-8W1DS-9Q1JO-1K4VA-4Z3NM
+永久卡-8C2RP-9T9LB-1Y9EH-6G0FJ-9D3SK
+永久卡-6V1AQ-1N7MW-8X8CR-7L4PT-0B7YF
+永久卡-3H1GD-7J3KS-1U3VZ-7A5NE-2C5ML
+永久卡-7R1TG-1Y5BO-7P3HN-7F4DV-8K9JA
+永久卡-5S4QM-8W3EC-8Z8RP-1T3LB-3N1YR
+永久卡-8K3MT-2P3LZ-1X0CB-6N2RW-6T4YH
+永久卡-2D3FJ-1S0VM-8G5EK-1U8AP-4O2IC
+永久卡-9L9BR-3E6NT-5Y5WF-9H7QD-4J1ZV
+永久卡-7A7SN-2M7KX-7C1PL-8R4TG-4B9YE
+永久卡-7F9HU-6W7DS-3Q8JO-1K8VA-2Z6NM
+永久卡-8C8RP-1T9LB-8Y0EH-7G3FJ-4D8SK
+永久卡-6V2AQ-5N8MW-7X0CR-6L1PT-9B3YF
+永久卡-6H3GD-9J6KS-5U3VZ-8A1NE-6C9ML
+永久卡-5R3TG-3Y0BO-7P5HN-9F4DV-3K9JA
+永久卡-3S7QM-3W6EC-1Z0RP-7T0LB-5N7YR
+永久卡-6K7MT-8P2LZ-1X5CB-8N3RW-3T7YH
+永久卡-8D7FJ-6S7VM-7G8EK-7U6AP-8O8IC
+永久卡-6L9BR-7E2NT-5Y9WF-1H3QD-1J3ZV
+永久卡-6A8SN-7M3KX-6C5PL-6R6TG-4B7YE
+永久卡-7F6HU-7W5DS-5Q3JO-2K8VA-3Z5NM
+永久卡-9C9RP-3T0LB-7Y2EH-1G5FJ-1D1SK
+永久卡-5V1AQ-5N8MW-7X8CR-2L1PT-3B8YF
+永久卡-8H2GD-7J1KS-9U8VZ-7A7NE-3C1ML
+永久卡-4R2TG-6Y6BO-2P2HN-4F1DV-1K0JA
+永久卡-6S5QM-4W2EC-7Z0RP-8T1LB-6N5YR
+永久卡-2K9MT-8P5LZ-6X7CB-1N4RW-8T8YH
+永久卡-5D8FJ-8S3VM-4G8EK-4U2AP-6O6IC
+永久卡-2L1BR-1E7NT-3Y0WF-6H2QD-3J5ZV
+永久卡-5A8SN-7M1KX-9C5PL-7R1TG-4B2YE
+永久卡-2F4HU-1W2DS-9Q2JO-1K7VA-6Z5NM
+永久卡-5C2RP-4T0LB-4Y9EH-9G5FJ-2D0SK
+永久卡-2V7AQ-6N8MW-1X3CR-7L9PT-4B9YF
+永久卡-7H9GD-2J6KS-1U8VZ-7A5NE-1C0ML
+永久卡-1R0TG-5Y5BO-6P6HN-3F6DV-3K0JA
+永久卡-3S6QM-4W3EC-8Z0RP-5T4LB-6N9YR
+永久卡-8K3MT-4P5LZ-1X8CB-9N6RW-8T1YH
+永久卡-7D8FJ-9S5VM-2G5EK-2U5AP-5O3IC
+永久卡-7L5BR-6E5NT-7Y8WF-4H3QD-3J6ZV
+永久卡-5A0SN-4M2KX-3C1PL-5R9TG-5B9YE
+永久卡-9F8HU-3W8DS-3Q9JO-6K5VA-3Z0NM
+永久卡-9C5RP-3T1LB-1Y8EH-2G2FJ-4D0SK
+永久卡-7V0AQ-6N5MW-1X8CR-2L6PT-1B3YF
+永久卡-4H6GD-7J6KS-8U5VZ-8A1NE-7C8ML
+永久卡-1R2TG-9Y5BO-9P4HN-2F6DV-4K4JA
+永久卡-6S8QM-1W6EC-7Z2RP-6T0LB-3N2YR
+永久卡-2K0MT-6P4LZ-4X3CB-8N8RW-2T5YH
+永久卡-4D5FJ-5S0VM-4G8EK-9U4AP-5O6IC
+永久卡-3L4BR-3E1NT-7Y0WF-2H7QD-9J3ZV
+永久卡-4A8SN-9M5KX-5C2PL-5R7TG-1B2YE
+永久卡-9F0HU-3W7DS-8Q3JO-8K4VA-6Z9NM
+永久卡-2C0RP-8T8LB-3Y9EH-4G0FJ-3D1SK
+永久卡-7V5AQ-8N1MW-4X0CR-5L1PT-1B4YF
+永久卡-8H5GD-4J2KS-5U1VZ-5A7NE-9C2ML
+永久卡-4R6TG-2Y4BO-4P0HN-5F0DV-6K0JA
+永久卡-2S0QM-6W9EC-3Z8RP-5T6LB-8N7YR
+永久卡-7K6MT-9P3LZ-7X1CB-2N5RW-3T4YH
+永久卡-2D5FJ-4S6VM-2G7EK-2U6AP-4O0IC
+永久卡-6L1BR-7E2NT-8Y0WF-7H2QD-1J3ZV
+永久卡-3A3SN-4M9KX-6C3PL-1R7TG-6B8YE
+永久卡-9F4HU-6W6DS-1Q2JO-7K8VA-9Z3NM
+永久卡-1C4RP-1T2LB-9Y4EH-4G6FJ-5D6SK
+永久卡-6V1AQ-6N9MW-4X5CR-4L0PT-1B5YF
+永久卡-7H9GD-7J8KS-6U2VZ-9A4NE-4C3ML
+永久卡-5R4TG-5Y4BO-6P9HN-5F7DV-8K6JA
+永久卡-4S3QM-3W5EC-1Z8RP-5T7LB-3N8YR
+永久卡-7K1MT-2P3LZ-3X0CB-8N6RW-3T1YH
+永久卡-2D5FJ-2S8VM-3G6EK-9U7AP-8O4IC
+永久卡-7L0BR-9E4NT-5Y0WF-1H4QD-3J9ZV
+永久卡-3A1SN-7M0KX-7C7PL-6R6TG-5B1YE
+永久卡-7F4HU-9W5DS-6Q8JO-4K6VA-8Z9NM
+永久卡-8C8RP-2T5LB-7Y9EH-1G5FJ-9D5SK
+永久卡-8V7AQ-6N0MW-5X8CR-1L4PT-8B6YF
+永久卡-3H4GD-4J2KS-7U9VZ-6A3NE-1C8ML
+永久卡-4R3TG-7Y7BO-2P8HN-1F9DV-4K3JA
+永久卡-4S2QM-8W6EC-7Z6RP-7T8LB-1N4YR
+永久卡-9K9MT-7P2LZ-5X5CB-1N2RW-2T0YH
+永久卡-1D4FJ-9S2VM-2G6EK-5U4AP-1O0IC
+永久卡-5L9BR-2E1NT-7Y9WF-5H0QD-8J6ZV
+永久卡-4A1SN-7M7KX-7C2PL-2R3TG-3B1YE
+永久卡-8F0HU-1W5DS-9Q6JO-1K2VA-7Z8NM
+永久卡-9C3RP-5T4LB-1Y1EH-3G8FJ-4D2SK
+永久卡-8V6AQ-4N3MW-7X3CR-9L1PT-3B6YF
+永久卡-6H4GD-2J1KS-6U1VZ-3A0NE-0C3ML
+永久卡-4R9TG-4Y2BO-8P4HN-3F7DV-9K0JA
+永久卡-3S1QM-1W1EC-1Z2RP-6T0LB-2N8YR
+永久卡-8K2MT-5P4LZ-1X1CB-1N5RW-7T0YH
+永久卡-2D3FJ-7S3VM-4G3EK-7U8AP-3O4IC
+永久卡-1L0BR-8E1NT-5Y7WF-3H5QD-1J5ZV
+永久卡-4A8SN-7M3KX-1C5PL-2R4TG-6B9YE
+永久卡-1F1HU-5W4DS-7Q1JO-9K0VA-5Z9NM
+永久卡-5C6RP-1T2LB-1Y3EH-9G2FJ-1D2SK
+永久卡-7V8AQ-8N7MW-1X2CR-4L8PT-8B9YF
+永久卡-5H3GD-2J9KS-3U9VZ-6A1NE-6C6ML
+永久卡-1R7TG-9Y5BO-4P4HN-8F4DV-9K4JA
+永久卡-2S2QM-2W0EC-3Z7RP-2T1LB-6N5YR
+永久卡-2K1MT-1P0LZ-3X2CB-8N1RW-7T4YH
+永久卡-7D0FJ-2S1VM-1G2EK-4U3AP-1O7IC
+永久卡-6L2BR-6E0NT-6Y1WF-7H4QD-7J0ZV
+永久卡-7A2SN-3M6KX-4C8PL-2R2TG-6B4YE
+永久卡-9F4HU-8W1DS-3Q5JO-4K2VA-9Z2NM
+永久卡-8C8RP-9T5LB-8Y3EH-5G7FJ-6D2SK
+永久卡-8V7AQ-3N2MW-4X4CR-4L8PT-3B1YF
+永久卡-7H8GD-4J1KS-3U8VZ-5A1NE-4C2ML
+永久卡-6R1TG-4Y5BO-5P3HN-5F1DV-3K2JA
+永久卡-3S9QM-5W7EC-4Z2RP-5T8LB-2N7YR
+永久卡-2K8MT-9P4LZ-1X7CB-6N1RW-6T2YH
+永久卡-1D2FJ-2S5VM-5G1EK-8U3AP-4O9IC
+永久卡-2L1BR-4E7NT-3Y3WF-6H5QD-6J4ZV
+永久卡-6A0SN-3M6KX-2C0PL-5R9TG-7B4YE
+永久卡-1F2HU-6W6DS-4Q5JO-6K4VA-8Z5NM
+永久卡-6C2RP-2T5LB-9Y4EH-5G1FJ-2D6SK
+永久卡-8V9AQ-6N8MW-8X4CR-6L9PT-3B5YF
+永久卡-4H0GD-7J6KS-6U2VZ-3A8NE-8C8ML
+永久卡-5R5TG-2Y0BO-5P1HN-2F0DV-9K0JA
+永久卡-3S2QM-3W1EC-3Z7RP-5T6LB-4N0YR
+永久卡-2K4MT-3P5LZ-7X4CB-2N0RW-6T6YH
+永久卡-1D9FJ-6S6VM-5G4EK-8U1AP-2O5IC
+永久卡-2L5BR-3E2NT-2Y9WF-5H2QD-2J3ZV
+永久卡-6A5SN-5M2KX-5C5PL-7R3TG-7B9YE
+永久卡-8F4HU-4W4DS-2Q0JO-6K4VA-3Z1NM
+永久卡-9C8RP-7T7LB-6Y4EH-2G1FJ-6D8SK
+永久卡-2V5AQ-3N4MW-3X1CR-1L5PT-2B4YF
+永久卡-9H6GD-8J3KS-7U0VZ-7A6NE-5C5ML
+永久卡-8R0TG-9Y2BO-2P7HN-6F6DV-6K5JA
+永久卡-5S5QM-4W5EC-6Z2RP-9T2LB-8N4YR
+永久卡-3K1MT-7P5LZ-8X5CB-6N9RW-2T9YH
+永久卡-4D6FJ-5S3VM-8G7EK-9U1AP-9O2IC
+永久卡-8L5BR-4E8NT-7Y3WF-8H1QD-1J6ZV
+永久卡-6A9SN-4M4KX-7C0PL-1R0TG-5B1YE
+永久卡-7F3HU-8W1DS-8Q3JO-1K6VA-6Z9NM
+永久卡-5C5RP-4T3LB-5Y2EH-2G2FJ-3D4SK
+永久卡-2V0AQ-9N8MW-8X1CR-9L2PT-1B9YF
+永久卡-2H3GD-4J3KS-4U8VZ-9A2NE-7C6ML
+永久卡-9R7TG-3Y4BO-4P3HN-3F1DV-6K9JA
+永久卡-7S3QM-3W3EC-2Z4RP-9T0LB-2N5YR
+永久卡-1K1MT-3P5LZ-2X3CB-2N7RW-9T5YH
+永久卡-3D8FJ-3S6VM-9G7EK-8U8AP-6O1IC
+永久卡-6L6BR-7E7NT-8Y4WF-6H3QD-2J1ZV
+永久卡-5A7SN-6M5KX-6C1PL-5R4TG-3B2YE
+永久卡-6F2HU-5W3DS-4Q3JO-2K9VA-2Z7NM
+永久卡-6C1RP-7T2LB-1Y9EH-8G9FJ-9D0SK
+永久卡-7V3AQ-8N6MW-5X0CR-3L4PT-2B5YF
+永久卡-3H6GD-7J9KS-1U4VZ-1A2NE-6C4ML
+永久卡-6R9TG-7Y5BO-3P4HN-8F5DV-1K8JA
+永久卡-2S2QM-2W6EC-3Z0RP-9T1LB-8N3YR
+永久卡-7K6MT-6P0LZ-4X4CB-1N7RW-3T6YH
+永久卡-3L2BR-6E3NT-6Y2WF-4H1QD-5J8ZV";
 
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-function hexA(hex, a){ const h = hex.replace('#',''); const r = parseInt(h.slice(0,2),16); const g = parseInt(h.slice(2,4),16); const b = parseInt(h.slice(4,6),16); return `rgba(${r},${g},${b},${a})`;}
-function pad(n){ return String(n).padStart(2,'0'); }
-function fmtTime(ts){ if(ts == null) return '—'; const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;}
-function isToday(ts){ const d = new Date(ts), n = new Date(); return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();}
-function randomCode(){ const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const seg = () => Array.from({length:4}, () => chars[Math.floor(Math.random()*chars.length)]).join(''); return `${seg()}-${seg()}-${seg()}`;}
-function uniqueCode(){ const existing = new Set(cards.map(c => c.code)); let c; do { c = randomCode(); } while (existing.has(c)); return c;}
-function expireAtOf(card){ if(!card.durationHours) return null; return card.createdAt + card.durationHours * 3600000;}
-function isExpired(card){ const e = expireAtOf(card); return e !== null && Date.now() >= e;}
-function canUseCard(card){ if(card.status !== 'enabled') return false; if(isExpired(card)) return false; if(!card.multiUser && card.used) return false; return true;}
-function formatRemaining(card){ const e = expireAtOf(card); if(e === null) return '永久'; const diff = e - Date.now(); if(diff <= 0) return '已过期'; const days = Math.floor(diff / 86400000); const hours = Math.floor((diff % 86400000) / 3600000); const mins = Math.floor((diff % 3600000) / 60000); if(days > 0) return `${days}天${hours}小时`; if(hours > 0) return `${hours}小时${mins}分钟`; return `${mins}分钟`;}
-function toast(msg){ const el = document.createElement('div'); el.className = 'island'; el.innerHTML = '<span class="dot"></span><span></span>'; el.querySelector('span:last-child').textContent = msg; document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('show')); setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 500); }, 2000);}
+var params = new URLSearchParams(window.location.search);
+var userCard = params.get('key');
 
-function makeCard(type, durationHours, durationText, code){ if(type === 'forever'){ durationHours = null; durationText = '永久'; }else if(type !== 'custom'){ const t = TYPES[type]; durationHours = t.days * 24; durationText = t.days + '天'; } return { id: uid(), code: code || uniqueCode(), type, durationHours, durationText, createdAt: Date.now(), status: 'enabled', disabledAt: null, used: false, usedAt: null, boundDevice: null, multiUser: false };}
-function seedData(){ const out = []; const specs = [ { type:'day', n:6 }, { type:'week', n:4 }, { type:'month', n:3 }, { type:'forever', n:2 }, { type:'custom', n:3 } ];
-specs.forEach(s => { for(let i=0;i<s.n;i++){ let c; if(s.type === 'custom'){ const opts = [ { h:12, t:'12小时' }, { h:36, t:'1天12小时' }, { h:72, t:'3天' }, { h:180, t:'7天12小时' } ]; const pick = opts[Math.floor(Math.random()*opts.length)]; c = makeCard('custom', pick.h, pick.t); }else{ c = makeCard(s.type); }
-c.createdAt = Date.now() - Math.floor(Math.random()*18) * 86400000 - Math.floor(Math.random()*86400000);
-if(Math.random() < 0.32){ c.status = 'disabled'; c.disabledAt = c.createdAt + 3600000 * (1 + Math.floor(Math.random()*6)); }
-if(Math.random() < 0.42){ c.used = true; c.usedAt = c.createdAt + 1800000 * (1 + Math.floor(Math.random()*8)); c.boundDevice = 'DEV-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
-c.multiUser = Math.random() < 0.25;
-out.push(c); } }); out.sort((a,b) => b.createdAt - a.createdAt); return out;}
-
-function save(){ try{ localStorage.setItem('yh_cards_data', JSON.stringify(cards)); }catch(e){} }
-function load(){
-  try { const raw = localStorage.getItem('yh_cards_data'); if(raw){ cards = JSON.parse(raw); return; } } catch(e){}
-  cards = seedData();
+if (userCard === MY_CARD) {
+  document.write("ok");
+} else {
+  document.write("invalid");
 }
-
-function openModal(html, handler, setup){ return new Promise(resolve => { const mask = $('modalMask'); const box = $('modalBox'); box.innerHTML = html; mask.classList.add('show');
-if(setup) setup(box);
-const close = val => { mask.classList.remove('show'); setTimeout(() => { box.innerHTML = ''; }, 420); resolve(val); };
-box.querySelectorAll('[data-act]').forEach(btn => { btn.addEventListener('click', () => { const act = btn.dataset.act; if(act === 'cancel'){ close(null); return; } const res = handler ? handler(act, box) : act; if(res === false) return; close(res); }); });
-const first = box.querySelector('input'); if(first) setTimeout(() => first.focus(), 260); });}
-function confirmModal(title, desc){ return openModal( `<div class="modal-title">${title}</div> <div class="modal-desc">${desc}</div> <div class="modal-actions"> <button class="btn ghost" data-act="cancel">取消</button> <button class="btn danger" data-act="ok">确定删除</button> </div>`, () => true );}
-function askDuration(){ const html = ` <div class="modal-title">设置有效时间</div> <div class="modal-desc">「自定义」卡密需指定具体有效期，可分别填写年、天、小时</div> <div class="dur-row"> <div class="dur-cell"> <div class="dur-input-wrap"> <input id="durY" class="dur-real" type="text" inputmode="numeric" maxlength="4" value="0" autocomplete="off"> <div class="dur-mirror" id="durYM"></div> </div> <span class="unit">年</span> </div> <div class="dur-cell"> <div class="dur-input-wrap"> <input id="durD" class="dur-real" type="text" inputmode="numeric" maxlength="4" value="0" autocomplete="off"> <div class="dur-mirror" id="durDM"></div> </div> <span class="unit">天</span> </div> <div class="dur-cell"> <div class="dur-input-wrap"> <input id="durH" class="dur-real" type="text" inputmode="numeric" maxlength="4" value="0" autocomplete="off"> <div class="dur-mirror" id="durHM"></div> </div> <span class="unit">小时</span> </div> </div> <div class="modal-actions"> <button class="btn ghost" data-act="cancel">取消</button> <button class="btn primary" data-act="ok">确定生成</button> </div>`;
-return openModal(html, (act, box) => { if(act !== 'ok') return null;
-const y = parseInt(box.querySelector('#durY').value, 10) || 0; const d = parseInt(box.querySelector('#durD').value, 10) || 0; const h = parseInt(box.querySelector('#durH').value, 10) || 0;
-if(y < 0 || d < 0 || h < 0){ toast('时长不能为负数'); return false; }
-const totalHours = y * 365 * 24 + d * 24 + h; if(totalHours <= 0){ toast('请至少填写一个大于 0 的时长'); return false; }
-const parts = []; if(y > 0) parts.push(y + '年'); if(d > 0) parts.push(d + '天'); if(h > 0) parts.push(h + '小时');
-return { hours: totalHours, text: parts.join('') }; }, (box) => { ['durY','durD','durH'].forEach(id => { const inp = box.querySelector('#' + id); const mir = box.querySelector('#' + id + 'M'); if(!inp || !mir) return; const m = createMirror(inp, mir); m.sync(inp.value); inp.addEventListener('input', () => { let v = inp.value.replace(/[^0-9]/g, ''); if(v.length > 4) v = v.slice(0, 4); if(inp.value !== v) inp.value = v; m.sync(v); }); }); setTimeout(() => { const first = box.querySelector('#durY'); if(first) first.focus(); }, 260); });}
-
-function showCardDetail(card){ const t = TYPES[card.type]; const expireAt = expireAtOf(card); const canUse = canUseCard(card); const remaining = formatRemaining(card); const deviceText = card.boundDevice ? card.boundDevice : '未绑定'; const deviceMode = card.multiUser ? '多设备' : '单设备';
-const html = ` <div class="modal-title">卡密详细信息</div> <div class="detail-list"> <div class="detail-row"><span>卡密</span><b class="mono">${card.code}</b></div> <div class="detail-row"><span>类型</span><b style="color:${t.color}">${t.name}</b></div> <div class="detail-row"><span>卡密状态</span><b class="${canUse ? 'ok' : 'warn'}">${canUse ? '可用' : '不可用'}</b></div> <div class="detail-row"><span>创建时间</span><b>${fmtTime(card.createdAt)}</b></div> <div class="detail-row"><span>到期时间</span><b>${expireAt ? fmtTime(expireAt) : '永久有效'}</b></div> <div class="detail-row"><span>剩余时间</span><b class="${remaining === '已过期' ? 'warn' : 'ok'}">${remaining}</b></div> <div class="detail-row"><span>绑定设备</span><b class="mono">${deviceText}</b></div> <div class="detail-row"><span>单设备/多设备</span><b>${deviceMode}</b></div> </div> <div class="modal-actions"> <button class="btn ghost" data-act="cancel">关闭</button> </div>`;
-return openModal(html, () => true);}
-function buildActionsHtml(card){ const isDisabled = card.status === 'disabled'; const isBound = !!(card.used && card.boundDevice);
-return ` <div class="modal-title">卡密操作</div> <div class="modal-desc" style="font-family:ui-monospace,Menlo,monospace;letter-spacing:.05em;color:#f4f6ff">${card.code}</div> <div class="action-list"> <button class="action-btn ${isDisabled ? '' : 'danger'}" data-act="toggle">${isDisabled ? '开启卡密' : '禁用卡密'}</button> <button class="action-btn" data-act="unbind" ${isBound ? '' : 'disabled'}>解绑</button> <button class="action-btn" data-act="copy">复制</button> <button class="action-btn" data-act="usermode">${card.multiUser ? '单设备' : '多设备'}</button> </div> <button class="btn ghost" data-act="cancel" style="width:100%;margin-top:16px">关闭</button>`;}
-async function showCardActions(card){ const act = await openModal(buildActionsHtml(card), (a) => a); if(!act) return;
-if(act === 'toggle'){ card.status = card.status === 'enabled' ? 'disabled' : 'enabled'; save(); renderAll(); toast(card.status === 'enabled' ? '已开启' : '已禁用'); } else if(act === 'unbind'){ if(!card.used && !card.boundDevice){ toast('该卡密未绑定设备'); } else { card.used = false; card.boundDevice = null; save(); renderAll(); toast('已解绑'); } } else if(act === 'copy'){ copyText(card.code); return; } else if(act === 'usermode'){ card.multiUser = !card.multiUser; save(); renderAll(); toast(!card.multiUser ? '已切换为多设备' : '已切换为单设备'); }
-const fresh = cards.find(c => c.id === card.id); if(fresh) showCardActions(fresh);}
-
-function createMirror(inputEl, mirrorEl){ let text = ''; let els = [];
-function updateCursor(){ const old = mirrorEl.querySelector('.mcaret'); if(old) old.remove(); if(document.activeElement !== inputEl) return; const pos = inputEl.selectionStart == null ? inputEl.value.length : inputEl.selectionStart; const c = document.createElement('span'); c.className = 'mcaret'; const ref = els[pos]; if(ref && ref.parentNode === mirrorEl){ mirrorEl.insertBefore(c, ref); }else{ mirrorEl.appendChild(c); } }
-function sync(newText){ if(text === newText){ updateCursor(); return; }
-let p = 0; while(p < text.length && p < newText.length && text[p] === newText[p]) p++;
-let oEnd = text.length, nEnd = newText.length; while(oEnd > p && nEnd > p && text[oEnd-1] === newText[nEnd-1]){ oEnd--; nEnd--; }
-if(oEnd > p){ const parentRect = mirrorEl.getBoundingClientRect(); for(let i = p; i < oEnd; i++){ const el = els[i]; if(!el || !el.parentNode) continue; if(el.tagName !== 'BR'){ const r = el.getBoundingClientRect(); if(r.width > 0 && r.height > 0){ const clone = el.cloneNode(true); clone.className = 'mchar fly'; clone.style.position = 'absolute'; clone.style.left = (r.left - parentRect.left) + 'px'; clone.style.top = (r.top - parentRect.top ) + 'px'; mirrorEl.appendChild(clone); setTimeout(() => clone.remove(), 480); } } el.remove(); } els.splice(p, oEnd - p); }
-if(nEnd > p){ const ref = els[p] || null; const newEls = []; for(let i = p; i < nEnd; i++){ const ch = newText[i]; let el; if(ch === '\n'){ el = document.createElement('br'); el.className = 'mbr'; }else if(ch === ' '){ el = document.createElement('span'); el.className = 'mchar pop'; el.textContent = '\u00A0'; }else{ el = document.createElement('span'); el.className = 'mchar pop'; el.textContent = ch; } newEls.push(el); mirrorEl.insertBefore(el, ref); } els.splice(p, 0, ...newEls); }
-text = newText; updateCursor(); }
-function reset(){ mirrorEl.innerHTML = ''; text = ''; els = []; }
-inputEl.addEventListener('click', () => setTimeout(updateCursor, 0)); inputEl.addEventListener('keyup', updateCursor); inputEl.addEventListener('focus', () => setTimeout(updateCursor, 0)); inputEl.addEventListener('blur', () => { const old = mirrorEl.querySelector('.mcaret'); if(old) old.remove(); });
-return { sync, reset, updateCursor };}
-
-let codeMirror = null;let qtyMirror = null;let searchMirror = null;
-
-function renderHome(animate){ const total = cards.length; const disabled = cards.filter(c => c.status === 'disabled').length; const enabled = total - disabled; const today = cards.filter(c => isToday(c.createdAt)).length;
-$('homeStats').innerHTML = ` <div class="stat main"> <div class="stat-label">卡密总数</div> <div class="stat-value">${total}</div> <div class="stat-sub">今日新增 ${today} 张</div> </div> <div class="stat"> <div class="stat-label">可用</div> <div class="stat-value ok">${enabled}</div> </div> <div class="stat"> <div class="stat-label">禁用</div> <div class="stat-value warn">${disabled}</div> </div>`;
-const rows = TYPE_ORDER.map(k => { const t = TYPES[k]; const n = cards.filter(c => c.type === k).length; const pct = total ? Math.round(n / total * 100) : 0; return { t, n, pct }; });
-$('homeDist').innerHTML = rows.map(r => ` <div class="dist-row"> <div class="dist-name" style="color:${r.t.color}">${r.t.name}</div> <div class="dist-bar"> <div class="dist-fill" style="width:${r.pct}%;background:linear-gradient(90deg,${hexA(r.t.color,.5)},${r.t.color})"></div> </div> <div class="dist-nums"> <span class="dist-count">${r.n} 张</span> <span class="dist-pct">${r.pct}%</span> </div> </div>`).join('');
-}
-
-function renderTypeGrid(){ const typeCells = TYPE_ORDER.map(k => { const t = TYPES[k]; const desc = k === 'forever' ? '永久有效' : k === 'custom' ? '自定义时长' : t.days + ' 天'; return ` <button class="type-opt ${state.selectedType === k ? 'sel' : ''}" data-type="${k}"> <span class="badge" style="background:${hexA(t.color,.20)};color:${t.color};border:1px solid ${hexA(t.color,.4)}">${t.short}</span> <span class="name">${t.name}</span> <span class="desc">${desc}</span> <span class="tick">✓</span> </button>`; }).join('');
-const modeCell = ` <div class="mode-cell" id="modeCell"> <div class="mode-indicator" id="modeIndicator"></div> <button class="mode-mini ${state.mode === 'random' ? 'sel' : ''}" data-mode="random">随机</button> <button class="mode-mini ${state.mode === 'custom' ? 'sel' : ''}" data-mode="custom">自定义</button> </div>`;
-$('typeGrid').innerHTML = typeCells + modeCell; requestAnimationFrame(() => { moveTypeIndicator(); moveModeIndicator(); });}
-function moveTypeIndicator(){ const wrap = $('typeIndicator').parentElement; const ind = $('typeIndicator'); const btn = document.querySelector(`.type-opt[data-type="${state.selectedType}"]`); if(!wrap || !ind || !btn) return; const wRect = wrap.getBoundingClientRect(); const bRect = btn.getBoundingClientRect(); if(bRect.width === 0) return; ind.style.left = (bRect.left - wRect.left) + 'px'; ind.style.top = (bRect.top - wRect.top ) + 'px'; ind.style.width = bRect.width + 'px'; ind.style.height = bRect.height + 'px'; ind.classList.add('on');}
-function moveModeIndicator(){ const ind = $('modeIndicator'); const btn = document.querySelector(`.mode-mini[data-mode="${state.mode}"]`); if(!ind || !btn) return; if(btn.offsetHeight === 0) return; ind.style.top = btn.offsetTop + 'px'; ind.style.height = btn.offsetHeight + 'px';}
-function selectType(k){ if(k === state.selectedType) return; state.selectedType = k; document.querySelectorAll('.type-opt').forEach(b => { b.classList.toggle('sel', b.dataset.type === k); }); moveTypeIndicator();}
-function setMode(m){ state.mode = m; document.querySelectorAll('.mode-mini').forEach(b => { b.classList.toggle('sel', b.dataset.mode === m); }); moveModeIndicator();
-const slot = $('morphSlot'); const label = $('morphLabel'); const isCustom = m === 'custom';
-slot.classList.toggle('custom', isCustom);
-label.classList.add('swap'); setTimeout(() => { label.textContent = isCustom ? '卡密内容（每行一个）' : '创建数量'; label.classList.remove('swap'); }, 220);}
-function getFilteredCards(){ const q = state.query.trim().toUpperCase(); return cards .filter(c => state.filter === 'all' || c.type === state.filter) .filter(c => !q || c.code.toUpperCase().includes(q)) .sort((a,b) => b.createdAt - a.createdAt);}
-function moveChipIndicator(chipEl){ const ind = $('chipIndicator'); if(!ind) return; if(!chipEl){ ind.classList.remove('on'); return; } ind.style.left = chipEl.offsetLeft + 'px'; ind.style.top = chipEl.offsetTop + 'px'; ind.style.width = chipEl.offsetWidth + 'px'; ind.style.height = chipEl.offsetHeight + 'px'; ind.classList.add('on');}
-function updateChipCounts(){ const counts = { all: cards.length }; TYPE_ORDER.forEach(k => counts[k] = cards.filter(c => c.type === k).length); document.querySelectorAll('#filterChips .chip').forEach(chip => { const b = chip.querySelector('b'); if(b) b.textContent = counts[chip.dataset.filter]; }); requestAnimationFrame(() => { const sel = $('filterChips').querySelector('.chip.sel'); moveChipIndicator(sel); });}
-function cardItemsHtml(list){ return list.map((c, i) => { const t = TYPES[c.type]; const delay = Math.min(i * 26, 520); const isDisabled = c.status === 'disabled'; return ` <div class="card-item ${isDisabled ? 'disabled' : ''}" data-id="${c.id}" style="animation-delay:${delay}ms"> <div class="ci-head"> <span class="badge" style="background:${hexA(t.color,.20)};color:${t.color};border:1px solid ${hexA(t.color,.4)}">${t.name}</span> <span class="ci-status ${isDisabled ? 'disabled' : 'enabled'}">${isDisabled ? '禁用' : '可用'}</span> </div> <div class="ci-code">${c.code}</div> <div class="ci-meta"> <span>绑定状态：${c.used ? '已绑定' : '未绑定'}</span> <span>剩余：${formatRemaining(c)}</span> </div> <div class="ci-actions"> <button class="mini" data-act="detail">详细</button> <button class="mini" data-act="operate">操作</button> <button class="mini danger" data-act="del">删除</button> </div> </div>`; }).join('');}
-function refreshCardList(animate = false){ const list = getFilteredCards(); $('listCount').textContent = `共 ${list.length} 张`;
-const update = () => { if(!list.length){ $('cardList').innerHTML = `<div class="empty"><span class="big">🔍</span>没有找到匹配的卡密</div>`; }else{ $('cardList').innerHTML = cardItemsHtml(list); } };
-update();}
-function renderManage(){ const counts = { all: cards.length }; TYPE_ORDER.forEach(k => counts[k] = cards.filter(c => c.type === k).length);
-$('filterChips').innerHTML = `<div class="chip-indicator" id="chipIndicator"></div>` + `<button class="chip ${state.filter === 'all' ? 'sel' : ''}" data-filter="all">全部<b>${counts.all}</b></button>` + TYPE_ORDER.map(k => `<button class="chip ${state.filter === k ? 'sel' : ''}" data-filter="${k}">${TYPES[k].name}<b>${counts[k]}</b></button>` ).join('');
-refreshCardList();
-requestAnimationFrame(() => { const sel = $('filterChips').querySelector('.chip.sel'); moveChipIndicator(sel); });}
-function renderAll(){ renderHome(false); renderManage();}
-const PAGE_TITLE = { create: '创建卡密', home: '首页概览', manage: '卡密管理'};
-function moveIndicator(tabEl){ if(!tabEl) return; const bar = $('tabbar'); const ind = $('tabIndicator'); const barRect = bar.getBoundingClientRect(); const tabRect = tabEl.getBoundingClientRect(); ind.style.left = (tabRect.left - barRect.left) + 'px'; ind.style.width = tabRect.width + 'px'; ind.style.top = (tabRect.top - barRect.top ) + 'px'; ind.style.height = tabRect.height + 'px';}
-let switchTimer = null;
-function clearExiting(){ document.querySelectorAll('.page.exiting').forEach(el => { el.classList.remove('exiting'); });}
-function renderCurrentPage(p, animate){ if(p === 'home') renderHome(!!animate); if(p === 'manage') renderManage(); if(p === 'create'){ requestAnimationFrame(() => requestAnimationFrame(() => { moveTypeIndicator(); moveModeIndicator(); if(qtyMirror) qtyMirror.updateCursor(); if(codeMirror) codeMirror.updateCursor(); })); }}
-function switchPage(p){ if(switchTimer){ clearTimeout(switchTimer); switchTimer = null; } clearExiting();
-const oldEl = document.querySelector('.page.active'); const newEl = document.getElementById('page-' + p);
-state.page = p;
-document.querySelectorAll('.tab').forEach(el => { const on = el.dataset.page === p; el.classList.toggle('active', on); if(on) moveIndicator(el); }); $('pageTitle').textContent = PAGE_TITLE[p];
-if(oldEl === newEl){ window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-if(!oldEl){ if(newEl){ void newEl.offsetWidth; newEl.classList.add('active'); } renderCurrentPage(p, true); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-oldEl.classList.add('exiting'); oldEl.classList.remove('active');
-switchTimer = setTimeout(() => { switchTimer = null; oldEl.classList.remove('exiting'); if(newEl){ void newEl.offsetWidth; newEl.classList.add('active'); renderCurrentPage(p, true); } window.scrollTo({ top: 0, behavior: 'smooth' }); }, 180);}
-
-async function handleCreate(){ const type = state.selectedType; let durationHours = null; if(type === 'forever'){ durationHours = null; }else if(type === 'custom'){ const r = await askDuration(); if(!r) return; durationHours = r.hours; }else{ durationHours = TYPES[type].days * 24; }
-const btn = $('btnGenerate'); btn.disabled = true; try { let created = []; if(state.mode === 'custom'){ const raw = $('customCodeInput').value || ''; const codes = raw.split('\n').map(s => s.trim()).filter(Boolean); if(!codes.length){ toast('请输入卡密'); return; } const existing = new Set(cards.map(c => c.code)); const newCodes = codes.filter(c => !existing.has(c)); if(!newCodes.length){ toast('没有新增卡密（全部重复）'); return; } newCodes.forEach(code => { cards.push(makeCard(type, durationHours, null, code)); created.push({ code }); }); $('customCodeInput').value = ''; if(codeMirror) codeMirror.reset(); if(newCodes.length < codes.length) toast('跳过重复 ' + (codes.length - newCodes.length) + ' 条'); }else{ const count = state.count; if(count < 1){ toast('请输入有效数量'); return; } for(let i=0;i<count;i++){ const code = uniqueCode(); cards.push(makeCard(type, durationHours, null, code)); created.push({ code }); } } save(); showCreated(created); toast(`已生成 ${created.length} 张${TYPES[type].name}`); renderAll(); } catch(e) { toast('生成失败: ' + e.message); } finally { btn.disabled = false; }}
-function showCreated(list){ const box = $('createResult'); box.innerHTML = ` <div class="result-head"> <span>本次生成 ${list.length} 张卡密</span> <button class="link-btn" id="btnCopyCreated">复制全部</button> </div> <div class="result-list"> ${list.map(c => ` <div class="result-row"> <span>${c.code}</span> <button class="mini" style="flex:0 0 auto;padding:6px 14px" data-copy="${c.code}">复制</button> </div>`).join('')} </div>`; box.classList.add('show');
-$('btnCopyCreated').onclick = () => copyText(list.map(c => c.code).join('\n')); box.querySelectorAll('[data-copy]').forEach(b => { b.onclick = () => copyText(b.dataset.copy); });}
-function copyText(text){ try{ navigator.clipboard.writeText(text); }catch(e){ const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } toast('已复制到剪贴板');}
-
-function bindEvents(){ document.querySelectorAll('.tab').forEach(tab => { tab.addEventListener('click', () => switchPage(tab.dataset.page)); });
-$('typeGrid').addEventListener('click', e => { const tBtn = e.target.closest('.type-opt'); if(tBtn){ selectType(tBtn.dataset.type); return; } const mBtn = e.target.closest('.mode-mini'); if(mBtn){ setMode(mBtn.dataset.mode); return; } });
-const qtyInput = $('qtyInput'); const codeInput = $('customCodeInput'); const searchInput = $('searchInput');
-qtyInput.addEventListener('input', () => { let v = qtyInput.value.replace(/[^0-9]/g, ''); if(v.length > 3) v = v.slice(0, 3); if(qtyInput.value !== v) qtyInput.value = v; if(qtyMirror) qtyMirror.sync(v); if(v){ const n = parseInt(v, 10); if(n > 0) state.count = Math.min(999, n); } });
-codeInput.addEventListener('input', () => { if(codeMirror) codeMirror.sync(codeInput.value); }); codeInput.addEventListener('scroll', () => { $('customCodeMirror').scrollTop = codeInput.scrollTop; });
-searchInput.addEventListener('input', e => { state.query = e.target.value; if(searchMirror) searchMirror.sync(e.target.value); refreshCardList(); }); searchInput.addEventListener('scroll', () => { $('searchMirror').scrollLeft = searchInput.scrollLeft; });
-$('btnGenerate').addEventListener('click', handleCreate);
-$('filterChips').addEventListener('click', e => { const chip = e.target.closest('[data-filter]'); if(!chip) return; if(chip.dataset.filter === state.filter) return; state.filter = chip.dataset.filter;
-document.querySelectorAll('#filterChips .chip').forEach(c => { c.classList.toggle('sel', c.dataset.filter === state.filter); }); moveChipIndicator(chip);
-refreshCardList(true); });
-$('cardList').addEventListener('click', async e => { const btn = e.target.closest('button[data-act]'); if(!btn) return; const item = btn.closest('.card-item'); const card = cards.find(c => c.id === item.dataset.id); if(!card) return;
-const act = btn.dataset.act;
-if(act === 'detail'){ showCardDetail(card); } else if(act === 'operate'){ showCardActions(card); } else if(act === 'del'){ const ok = await confirmModal('删除卡密', `确定要删除 ${card.code} 吗？`); if(!ok) return; cards = cards.filter(c => c.id !== card.id); save(); renderAll(); toast('已删除'); } });}
-
-(function init(){ codeMirror = createMirror($('customCodeInput'), $('customCodeMirror')); qtyMirror = createMirror($('qtyInput'), $('qtyMirror')); searchMirror = createMirror($('searchInput'), $('searchMirror'));
-load(); bindEvents(); renderTypeGrid(); state.count = 1; $('qtyInput').value = '1'; qtyMirror.sync('1'); setMode('random'); renderAll(); switchPage('home'); setTimeout(() => { moveIndicator(document.querySelector('.tab.active')); }, 100);})();
 </script>
 </body>
-</html>
+ </html>
